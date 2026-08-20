@@ -28,3 +28,11 @@ pip install -r requirements.txt
 ```bash
 python app.py
 ```
+
+## 📄 Licencia y Uso Comercial
+
+Este proyecto se distribuye bajo una **Licencia de Uso Personal y No Comercial**.
+
+- ✅ **Permitido:** Uso personal, educativo, pruebas y modificaciones para uso propio no lucrativo.
+- ❌ **Prohibido:** Venta, reventa, sublicenciamiento o uso comercial corporativo sin autorización previa.
+- 💼 **Licenciamiento Comercial / Opciones de Venta:** Si deseas utilizar este software con fines comerciales, integrarlo en soluciones para empresas o adquirir una licencia comercial, contacta al autor (@Khiira / Ignacio Ledezma).
