@@ -1,4 +1,4 @@
-﻿# Sistema de Gestión de Horas
+# Sistema de Gestión de Horas
 
 Sistema integral y ligero para el registro, control y gestión de horas de trabajo, proyectos, actividades y recordatorios configurables.
 
@@ -13,12 +13,18 @@ Sistema integral y ligero para el registro, control y gestión de horas de traba
 
 ## Instalación y Uso
 
-1. Instalar dependencias:
-`ash
-pip install -r requirements.txt
-`
+1. Clonar el repositorio:
+```bash
+git clone https://github.com/Khiira/gestion-de-horas.git
+cd "gestion-de-horas"
+```
 
-2. Ejecutar la aplicación:
-`ash
+2. Instalar dependencias:
+```bash
+pip install -r requirements.txt
+```
+
+3. Ejecutar la aplicación:
+```bash
 python app.py
-`
+```
