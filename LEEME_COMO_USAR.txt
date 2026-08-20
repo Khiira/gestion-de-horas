@@ -1,0 +1,44 @@
+============================================================
+  SISTEMA DE GESTION DE HORAS PRO - VERSION PORTABLE
+============================================================
+
+¡Bienvenido! Esta es una versión portátil que no requiere instalación en Windows
+ni permisos de administrador. Tampoco requiere tener Python instalado.
+
+INSTRUCCIONES DE USO:
+1. Copia o extrae toda esta carpeta en tu Escritorio, Documentos o cualquier lugar.
+2. Haz doble clic en el archivo: Gestion_de_Horas_Portable.exe
+3. El sistema se iniciará silenciosamente en el fondo y abrirá automáticamente
+   tu navegador web favorito (Chrome, Edge, etc.) listo para usar.
+
+ALARMAS Y RECORDATORIOS 100% CONFIGURABLES:
+- El sistema cuenta con dos tipos de alertas totalmente personalizables desde el botón "⚙️ Configurar Alarmas" en la barra superior de la aplicación:
+  1. Alerta Periódica de Actividad: Te recuerda en pantalla registrar tus tareas mientras trabajas. Puedes elegir la frecuencia (cada 15, 30, 45, 60, 90 o 120 min) o desactivarla.
+  2. Alerta de Bitácora & People Space: Alerta programada para recordarte subir y revisar tus horas. Viene por defecto para los VIERNES a las 17:50, pero puedes cambiar el día de la semana y la hora exacta libremente.
+- Además, puedes probar y escuchar cada notificación al instante usando los botones "Probar" en el panel.
+
+INICIO AUTOMATICO (OPCIONAL):
+- Si quieres que el sistema y sus alertas se inicien solos al prender la PC:
+  Haz doble clic en 'Activar_Inicio_Automatico.vbs'
+- Si quieres quitar el inicio automático:
+  Haz doble clic en 'Desactivar_Inicio_Automatico.vbs'
+
+¿DONDE SE GUARDAN MIS DATOS?
+Tus horas y actividades se guardarán de forma 100% local y privada en un archivo
+llamado 'horas.db' que aparecerá dentro de esta misma carpeta cuando guardes tu primer registro.
+Cuando exportes reportes a Excel, se descargarán directo a tu carpeta de Descargas.
+
+¡Disfruta organizando tu tiempo y aumentando tu productividad!
+============================================================
+
+==================================================
+TIPS AVANZADOS:
+==================================================
+* Diferenciacion de horas personales/no facturables: 
+  Si en el campo "Cliente / Proyecto" usas "Interno - Personal", el sistema separara automaticamente esas horas en el Dashboard, mostrandolas en color morado (en tablas y calendario) para que no se mezclen con tus horas de trabajo normal.
+
+* Sonido de notificacion personalizado:
+  Si quieres usar tu propio sonido para los avisos en lugar del sonido por defecto de Windows, simplemente coloca un archivo llamado "alerta.wav" (debe ser formato .wav) en la misma carpeta donde esta el ejecutable (o el script de Python). El programa lo detectara automaticamente y lo reproducira en cada aviso.
+
+* Sonidos por cada alerta especifica:
+  Ademas de usar "alerta.wav" como sonido general, puedes asignar un sonido unico a cada alarma en especifico. Para ello, nombra tu archivo .wav con el ID de la alarma (por ejemplo, "recordatorio_periodico.wav" o "alarma_carga_sistemas.wav") y dejalo en la carpeta principal. El programa usara el sonido especifico de la alarma si existe, sino usara "alerta.wav", y si no existe ninguno, usara el sonido de Windows.

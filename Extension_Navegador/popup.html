@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cronómetro - Gestión de Horas Pro</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <img src="icon48.png" alt="Logo" class="logo">
+        <div>
+          <h1>Gestión de Horas</h1>
+          <span id="statusBadge" class="badge checking">🔴 Buscando Sistema...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Pestañas de Modo -->
+    <div class="tabs">
+      <button id="tabCronometro" class="tab active">⏱️ Cronómetro</button>
+      <button id="tabManual" class="tab">✍️ Ingreso Manual</button>
+    </div>
+
+    <!-- MODO CRONÓMETRO -->
+    <div id="viewCronometro" class="view active">
+      <div id="ext-quick-fill" style="display: none; margin-bottom: 4px; padding: 6px 8px; background: rgba(59, 130, 246, 0.1); border: 1px dashed rgba(59, 130, 246, 0.4); border-radius: 6px;">
+        <div id="ext-quick-header" style="font-size: 11px; font-weight: 600; color: #60a5fa; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;" title="Haz clic para colapsar o mostrar">
+          <span>⚡ Llenado Rápido (Anteriores)</span>
+          <span id="ext-quick-toggle" style="font-size: 10px; color: #94a3b8;">▼ Mostrar</span>
+        </div>
+        <div id="ext-chips" style="display: none; flex-wrap: wrap; gap: 4px; max-height: 80px; overflow-y: auto; margin-top: 6px;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Fecha de la Sesión</label>
+        <input type="date" id="c_fecha">
+        <div id="c_holiday_notice" class="ext-holiday-notice" style="display: none;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Lugar / Modalidad</label>
+        <input type="text" id="c_lugar" list="lugar_list" placeholder="Ej: Remoto / Casa, Oficina, Cliente ABC..." autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>Actividad</label>
+        <input type="text" id="c_actividad" list="actividad_list" placeholder="Ej: Desarrollo, Reunión, Interno, Soporte..." autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>Comentario o Tarea Específica</label>
+        <input type="text" id="c_comentario" list="comentario_list" placeholder="Ej: Interno - Revisión de RFP y cotización" autocomplete="off">
+      </div>
+
+      <!-- Pantalla del Cronómetro -->
+      <div class="timer-display" id="timerContainer">
+        <div id="timerClock" class="clock">00:00:00</div>
+        <div id="timerHours" class="sub-hours">(0.00 hrs acumuladas)</div>
+      </div>
+
+      <!-- Botones de Control -->
+      <div class="controls">
+        <button id="btnStart" class="btn btn-start">▶ Iniciar</button>
+        <button id="btnPause" class="btn btn-pause" style="display: none;">⏸️ Pausar</button>
+        <button id="btnResume" class="btn btn-resume" style="display: none;">▶ Continuar</button>
+        <button id="btnStopSave" class="btn btn-stop" style="display: none;">🛑 Detener y Guardar en Excel</button>
+        <button id="btnReset" class="btn btn-reset" style="display: none;">🔄 Reiniciar Cronómetro</button>
+      </div>
+    </div>
+
+    <!-- MODO MANUAL -->
+    <div id="viewManual" class="view">
+      <div class="form-group">
+        <label>Fecha de la Sesión</label>
+        <input type="date" id="m_fecha">
+        <div id="m_holiday_notice" class="ext-holiday-notice" style="display: none;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Lugar / Modalidad</label>
+        <input type="text" id="m_lugar" list="lugar_list" placeholder="Ej: Remoto / Casa, Oficina, Cliente ABC..." autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>Actividad</label>
+        <input type="text" id="m_actividad" list="actividad_list" placeholder="Ej: Desarrollo, Reunión, Interno, Soporte..." autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>Horas Trabajadas</label>
+        <input type="number" id="m_horas" step="0.25" min="0.25" placeholder="Ej: 1.5">
+        <div class="quick-hours-ext" style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
+          <button type="button" class="btn-quick-h" data-val="0.5">+0.5h</button>
+          <button type="button" class="btn-quick-h" data-val="1.0">1.0h</button>
+          <button type="button" class="btn-quick-h" data-val="1.5">1.5h</button>
+          <button type="button" class="btn-quick-h" data-val="2.0">2.0h</button>
+          <button type="button" class="btn-quick-h" data-val="3.0">3.0h</button>
+          <button type="button" class="btn-quick-h" data-val="4.0">4.0h</button>
+          <button type="button" class="btn-quick-h" data-val="8.0">8.0h</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Comentario o Tarea</label>
+        <input type="text" id="m_comentario" list="comentario_list" placeholder="Ej: Reunión con cliente sobre avance" autocomplete="off">
+      </div>
+
+      <button id="btnSaveManual" class="btn btn-start" style="width: 100%; margin-top: 8px;">💾 Guardar Registro</button>
+    </div>
+
+    <!-- Sugerencias para autocompletado inteligente -->
+    <datalist id="lugar_list"></datalist>
+    <datalist id="actividad_list"></datalist>
+    <datalist id="comentario_list"></datalist>
+
+    <!-- Mensaje Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <button id="btnOpenApp" class="link-btn">🌐 Abrir Web App Completa</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

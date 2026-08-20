@@ -1,0 +1,57 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.env
+.venv
+
+# Databases (local user data)
+*.db
+*.sqlite3
+*.sqlite
+
+# Logs
+*.log
+servidor_fondo.log
+
+# PyInstaller builds & Portable zips
+*.zip
+*.rar
+*.7z
+*.exe
+Gestion_de_Horas_Portable_Actualizado/
+
+# IDE / Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.BIN/
+.DS_Store

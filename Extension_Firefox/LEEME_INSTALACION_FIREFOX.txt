@@ -1,0 +1,27 @@
+====================================================================
+  GUÍA RÁPIDA: INSTALAR EXTENSIÓN CRONÓMETRO EN MOZILLA FIREFOX
+====================================================================
+
+¡Bienvenido! Esta extensión conecta tu navegador Mozilla Firefox directamente
+con tu Sistema de Gestión de Horas Pro local. Te permite llevar un cronómetro
+en vivo de tus tareas o hacer ingresos manuales sin abrir la web.
+
+PASOS PARA INSTALAR EN FIREFOX EN 30 SEGUNDOS:
+
+1. Abre tu navegador Mozilla Firefox.
+2. En la barra de direcciones superior, escribe y entra a:
+   👉  about:debugging#/runtime/this-firefox
+   (O en el menú superior: Complementos -> ícono de engrane -> Depurar complementos -> Este Firefox).
+3. Verás un botón grande superior que dice:
+   👉 "Cargar complemento temporal..." (o "Load Temporary Add-on...").
+4. Haz clic en ese botón, navega hasta ESTA CARPETA (Extension_Firefox)
+   y selecciona el archivo 'manifest.json' (o cualquier archivo dentro de esta carpeta).
+5. ¡LISTO! Verás aparecer el icono del reloj esmeralda en tu barra superior de Firefox.
+
+¿CÓMO FUNCIONA?
+- El cronómetro sigue corriendo en segundo plano aunque cierres la pestaña o cambies de ventana.
+- Al hacer clic en "🛑 Detener y Guardar", el tiempo se guarda al instante
+  en tu base de datos y se verá reflejado en tus reportes de Excel.
+- También cuentas con un botón gris "🔄 Reiniciar Cronómetro" y campos de texto libre
+  para colocar las actividades y lugares tal como desees.
+====================================================================

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control y Gestión de Horas Pro</title>
+  <meta name="description" content="Sistema profesional para el registro de horas de trabajo con dashboard analítico colapsable y exportación a Excel.">
+  
+  <!-- CSS Personalizado -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ cache_v }}">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Header Principal -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-stopwatch"></i>
+        </div>
+        <div>
+          <h1>Gestión de Horas Pro</h1>
+          <p><i class="fa-solid fa-circle" style="color: #10b981; font-size: 10px; margin-right: 4px;"></i> Sistema activo de fondo | Recordatorio cada 60 min | 📅 Aviso Bitácora & People Space: Viernes 17:50</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-config-alarmas" class="btn btn-outline" style="border-color: rgba(99, 102, 241, 0.5); color: #818cf8;" title="Configurar y programar alarmas y avisos">
+          <i class="fa-solid fa-gear"></i> Configurar Alarmas
+        </button>
+        <button id="btn-export-excel" class="btn btn-success" title="Descargar reporte formateado en Excel (.xlsx)">
+          <i class="fa-solid fa-file-excel"></i> Exportar a Excel
+        </button>
+        <button id="btn-export-csv" class="btn btn-outline" title="Descargar datos en formato CSV">
+          <i class="fa-solid fa-file-csv"></i> Exportar CSV
+        </button>
+      </div>
+    </header>
+
+    <!-- KPI Cards (Resumen Rápido) -->
+    <section class="kpi-grid">
+      <div class="kpi-card success">
+        <div class="kpi-label"><i class="fa-solid fa-calendar-day"></i> Horas Hoy</div>
+        <div class="kpi-value">
+          <span id="kpi-hoy">0.0</span> <span class="kpi-unit">h</span>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: normal; line-height: 1;"><span id="kpi-hoy-interno">0.0</span> h personales</div>
+        </div>
+      </div>
+      <div class="kpi-card warning">
+        <div class="kpi-label"><i class="fa-solid fa-calendar-week"></i> Esta Semana</div>
+        <div class="kpi-value">
+          <span id="kpi-semana">0.0</span> <span class="kpi-unit">h</span>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: normal; line-height: 1;"><span id="kpi-semana-interno">0.0</span> h personales</div>
+        </div>
+      </div>
+      <div class="kpi-card info">
+        <div class="kpi-label"><i class="fa-solid fa-calendar-days"></i> Este Mes</div>
+        <div class="kpi-value">
+          <span id="kpi-mes">0.0</span> <span class="kpi-unit">h</span>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: normal; line-height: 1;"><span id="kpi-mes-interno">0.0</span> h personales</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label"><i class="fa-solid fa-chart-line"></i> Total Histórico</div>
+        <div class="kpi-value">
+          <span id="kpi-general">0.0</span> <span class="kpi-unit">h</span>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: normal; line-height: 1;"><span id="kpi-general-interno">0.0</span> h personales</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección Dashboard Colapsable -->
+    <section class="card" id="dashboard-card">
+      <div class="collapsible-header" id="dashboard-toggle-header">
+        <div class="card-title">
+          <i class="fa-solid fa-chart-pie"></i> Dashboard Analítico de Tiempo
+        </div>
+        <div class="toggle-btn" id="toggle-btn-text">
+          <i class="fa-solid fa-chevron-up"></i> Ocultar Gráficos
+        </div>
+      </div>
+      <div class="collapsible-content" id="dashboard-content">
+        <div class="charts-grid">
+          <div>
+            <h3 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;">Horas por Cliente / Lugar</h3>
+            <div class="chart-container">
+              <canvas id="chart-lugar"></canvas>
+            </div>
+          </div>
+          <div>
+            <h3 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;">Horas por Tipo de Actividad</h3>
+            <div class="chart-container">
+              <canvas id="chart-actividad"></canvas>
+            </div>
+          </div>
+          <div>
+            <h3 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;">Tendencia Diaria (Últimos 30 días)</h3>
+            <div class="chart-container">
+              <canvas id="chart-tendencia"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace Principal: Formulario a la izquierda + Tabla a la derecha -->
+    <div class="main-grid">
+      
+      <!-- Columna 1: Formulario para ingresar horas -->
+      <div>
+        <div class="card" style="position: sticky; top: 24px;">
+          <div class="card-title" style="margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+            <i class="fa-solid fa-plus-circle"></i> Nuevo Registro
+          </div>
+          <div id="quick-fill-section" class="quick-fill-section" style="display: none; margin-bottom: 16px; padding: 10px 12px; background: rgba(59, 130, 246, 0.08); border: 1px dashed rgba(59, 130, 246, 0.4); border-radius: 8px;">
+            <div id="quick-fill-header" style="font-size: 12px; font-weight: 600; color: #60a5fa; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;" title="Haz clic para colapsar o mostrar las sugerencias">
+              <span><i class="fa-solid fa-bolt" style="color: #fbbf24; margin-right: 4px;"></i> Llenado Rápido (Anteriormente Puestos)</span>
+              <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+                <span id="quick-fill-toggle-text">Ocultar</span>
+                <i id="quick-fill-toggle-icon" class="fa-solid fa-chevron-up" style="transition: transform 0.2s;"></i>
+              </span>
+            </div>
+            <div id="quick-fill-chips" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; margin-top: 8px; transition: all 0.25s ease;">
+              <!-- Se llena por JS -->
+            </div>
+          </div>
+          <!-- SELECTOR DE TIPO DE INGRESO -->
+          <div style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 15px; padding: 12px; background: rgba(30, 41, 59, 0.5); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; flex: 1;">
+                <input type="radio" name="tipo_ingreso" value="registro" checked onchange="toggleTipoIngreso()"> 
+                <span style="font-weight: 500; font-size: 14px;"><i class="fa-solid fa-clock" style="color: var(--warning);"></i> Registrar Horas (Control)</span>
+              </label>
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; flex: 1;">
+                <input type="radio" name="tipo_ingreso" value="agenda" onchange="toggleTipoIngreso()">
+                <span style="font-weight: 500; font-size: 14px;"><i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Agendar Tarea (Planner)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- CONTENEDOR 1: REGISTRO DE HORAS -->
+          <div id="contenedor-registro">
+            <form id="form-registro">
+              <div class="form-group">
+                <label class="form-label" for="fecha"><i class="fa-regular fa-calendar" style="color: var(--primary); margin-right: 4px;"></i> Fecha de la Sesión</label>
+                <input type="date" id="fecha" class="form-control" required>
+                <div id="fecha-holiday-notice" class="form-holiday-notice" style="display: none;"></div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label" for="lugar"><i class="fa-solid fa-building-user" style="color: var(--info); margin-right: 4px;"></i> ¿A dónde fui? / Cliente / Proyecto</label>
+                <input type="text" id="lugar" class="form-control" list="lugar_list_web" placeholder="Ej: Oficina Central, Cliente ABC, Terreno..." required autocomplete="off">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; padding-left: 4px;">💡 <em>Tip: Usa <strong>"Interno - Personal"</strong> para separar visualmente esas horas como personales o no facturables en tu reporte.</em></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="actividad"><i class="fa-solid fa-briefcase" style="color: var(--success); margin-right: 4px;"></i> ¿Qué actividad realicé?</label>
+                <input type="text" id="actividad" class="form-control" list="actividad_list_web" placeholder="Ej: Reunión técnica, Desarrollo, Soporte..." required autocomplete="off">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="horas"><i class="fa-solid fa-clock" style="color: var(--warning); margin-right: 4px;"></i> Horas Trabajadas (1, 1.5, 2.5...)</label>
+                <input type="number" step="0.5" min="0.5" max="24" id="horas" class="form-control" placeholder="0.0" required style="margin-bottom: 10px; font-size: 16px; font-weight: 600;">
+                <div class="hours-input-wrapper">
+                  <button type="button" class="hours-quick-btn" data-val="0.5">+0.5 h</button>
+                  <button type="button" class="hours-quick-btn" data-val="1.0">1.0 h</button>
+                  <button type="button" class="hours-quick-btn" data-val="1.5">1.5 h</button>
+                  <button type="button" class="hours-quick-btn" data-val="2.0">2.0 h</button>
+                  <button type="button" class="hours-quick-btn" data-val="3.0">3.0 h</button>
+                  <button type="button" class="hours-quick-btn" data-val="4.0">4.0 h</button>
+                  <button type="button" class="hours-quick-btn" data-val="8.0">8.0 h</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="comentario"><i class="fa-regular fa-comment-dots" style="color: #a5b4fc; margin-right: 4px;"></i> Comentario Complementario</label>
+                <textarea id="comentario" class="form-control" placeholder="Observaciones u objetivos logrados en este bloque de tiempo..."></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 15px; font-size: 15px; margin-top: 8px;">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Guardar Registro de Horas
+              </button>
+            </form>
+          </div>
+
+          <!-- CONTENEDOR 2: AGENDA DE TAREAS -->
+          <div id="contenedor-agenda-main" style="display: none;">
+            <form id="form-agenda-main">
+              <div class="form-group">
+                <label class="form-label" for="agenda-titulo-main"><i class="fa-solid fa-heading" style="color: var(--primary);"></i> Título de la Tarea</label>
+                <input type="text" id="agenda-titulo-main" class="form-control" placeholder="Ej: Carga de sucursales, Reunión técnica..." required autocomplete="off">
+              </div>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 150px;">
+                  <label class="form-label" for="agenda-fecha-main"><i class="fa-regular fa-calendar"></i> Fecha (Opcional)</label>
+                  <input type="date" id="agenda-fecha-main" class="form-control">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 130px;">
+                  <label class="form-label" for="agenda-hora-main"><i class="fa-regular fa-clock"></i> Hora de Inicio (Opcional)</label>
+                  <input type="time" id="agenda-hora-main" class="form-control" value="09:00">
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 180px;">
+                  <label class="form-label" for="agenda-min-main"><i class="fa-solid fa-bell" style="color: #f59e0b;"></i> Recordatorio Previo</label>
+                  <select id="agenda-min-main" class="form-control">
+                    <option value="5">5 minutos antes</option>
+                    <option value="10" selected>10 minutos antes (Recomendado)</option>
+                    <option value="15">15 minutos antes</option>
+                    <option value="30">30 minutos antes</option>
+                    <option value="0">A la hora exacta</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 140px;">
+                  <label class="form-label" for="agenda-estado-main"><i class="fa-solid fa-tasks"></i> Estado</label>
+                  <select id="agenda-estado-main" class="form-control">
+                    <option value="pendiente">⏳ Pendiente</option>
+                    <option value="en_progreso">🔄 En Progreso</option>
+                    <option value="completada">✅ Completada</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 160px;">
+                  <label class="form-label" for="agenda-lugar-main"><i class="fa-solid fa-building-user"></i> Cliente / Proyecto (Opcional)</label>
+                  <input type="text" id="agenda-lugar-main" class="form-control" list="lugar_list_web" placeholder="Ej: Sucursal Norte..." autocomplete="off">
+                </div>
+                <div class="form-group" style="flex: 0.8; min-width: 120px;">
+                  <label class="form-label" for="agenda-horas-main"><i class="fa-solid fa-stopwatch"></i> Horas Est.</label>
+                  <input type="number" step="0.5" min="0.5" max="24" id="agenda-horas-main" class="form-control" value="1.0">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="agenda-desc-main"><i class="fa-regular fa-comment-dots"></i> Descripción / Checklist de Subtareas</label>
+                <textarea id="agenda-desc-main" class="form-control" rows="3" placeholder="Ej: Verificar inventario, cargar planilla de datos..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 15px; font-size: 15px; margin-top: 8px; background: #10b981; border-color: #10b981;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Tarea en Agenda
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna 2: Vistas de Trabajo (Día, Calendario, Historial) -->
+      <div>
+        <div class="card" style="min-height: 600px;">
+          <!-- Tabs de Navegación -->
+          <div class="views-nav-bar">
+            <button type="button" class="view-tab-btn active" data-view="daily">
+              <i class="fa-solid fa-sun" style="color: #fbbf24;"></i> Enfoque Diario
+            </button>
+            <button type="button" class="view-tab-btn" data-view="calendar">
+              <i class="fa-solid fa-calendar-days" style="color: #38bdf8;"></i> Calendario
+            </button>
+            <button type="button" class="view-tab-btn" data-view="history">
+              <i class="fa-solid fa-list-check" style="color: #a5b4fc;"></i> Historial General
+            </button>
+            <button type="button" class="view-tab-btn" data-view="agenda">
+              <i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Agenda & Planner
+            </button>
+          </div>
+
+          <!-- VISTA 1: ENFOQUE DIARIO (Tranquilidad y Foco) -->
+          <div id="view-daily" class="view-pane active">
+            <!-- Navegador de Fechas -->
+            <div class="date-navigator">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-prev-day" title="Día Anterior">
+                <i class="fa-solid fa-chevron-left"></i> Anterior
+              </button>
+              <div class="date-display-box" id="daily-date-box" title="Haz clic para seleccionar otra fecha en el calendario">
+                <input type="date" id="daily-date-picker" class="hidden-date-input">
+                <span id="daily-date-label">Hoy: --/--/----</span>
+                <i class="fa-solid fa-calendar-week" style="color: var(--primary); font-size: 15px; margin-left: 8px;"></i>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-next-day" title="Día Siguiente">
+                Siguiente <i class="fa-solid fa-chevron-right"></i>
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-today-day" style="margin-left: auto;" title="Volver al día actual">
+                <i class="fa-solid fa-calendar-day"></i> Hoy
+              </button>
+            </div>
+
+            <!-- Barra de Progreso y Tranquilidad -->
+            <div class="tranquility-box">
+              <div class="tranquility-header">
+                <span><i class="fa-solid fa-heart-pulse" style="color: #f43f5e;"></i> Estado de Jornada del Día</span>
+                <span class="hours-progress-text">
+                  <strong id="daily-hours-count">0.0</strong> / 
+                  <span id="daily-hours-target" style="cursor: pointer; text-decoration: underline; text-underline-offset: 3px;" title="Haz clic para cambiar tu meta diaria de horas">8.0</span> h 
+                  <i class="fa-solid fa-pen-to-square" style="font-size: 12px; color: var(--primary); cursor: pointer;" title="Editar meta diaria" id="btn-edit-target"></i>
+                </span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="daily-progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="tranquility-message" id="daily-tranquility-msg">
+                🌱 Día limpio. ¡Comienza a registrar tu tiempo con tranquilidad cuando estés listo!
+              </div>
+              <div id="daily-holiday-banner" class="holiday-alert-banner" style="display: none;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <h4 style="font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="fa-solid fa-check-double" style="color: var(--success); margin-right: 6px;"></i> Actividades Registradas en este Día
+              </h4>
+              <span class="badge" id="daily-count-badge" style="background: rgba(255,255,255,0.08); color: var(--text-primary);">0 registros</span>
+            </div>
+            
+            <!-- Resumen por Cliente/Proyecto -->
+            <div id="daily-summary-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+            </div>
+
+            <!-- Lista de Actividades del Día (Tarjetas limpias) -->
+            <div class="daily-activities-list" id="daily-list-container">
+              <!-- Se llena dinámicamente con JS -->
+            </div>
+          </div>
+
+          <!-- VISTA 2: CALENDARIO VISUAL DE HORAS -->
+          <div id="view-calendar" class="view-pane">
+            
+            <div style="display: flex; gap: 12px; font-size: 12px; margin-bottom: 12px; color: var(--text-secondary); background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: 6px; justify-content: center;">
+              <span><i class="fa-solid fa-square" style="color: rgba(99, 102, 241, 0.5);"></i> Horas de Trabajo</span>
+              <span><i class="fa-solid fa-square" style="color: rgba(168, 85, 247, 0.4);"></i> Tareas Internas/Personales</span>
+            </div>
+
+            <!-- Navegador de Mes/Año -->
+            <div class="month-navigator">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-prev-month">
+                <i class="fa-solid fa-chevron-left"></i> Mes Anterior
+              </button>
+              <h3 id="calendar-month-label">Julio 2026</h3>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-next-month">
+                Mes Siguiente <i class="fa-solid fa-chevron-right"></i>
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-current-month" style="margin-left: auto;">
+                <i class="fa-regular fa-calendar"></i> Mes Actual
+              </button>
+            </div>
+
+            <!-- Resumen Rápido del Mes -->
+            <div class="calendar-summary-bar">
+              <div class="cal-stat">
+                <span class="cal-stat-label"><i class="fa-solid fa-clock" style="color: var(--info);"></i> Total del Mes:</span>
+                <span class="cal-stat-val" id="cal-total-hours">0.0 h</span>
+              </div>
+              <div class="cal-stat">
+                <span class="cal-stat-label"><i class="fa-solid fa-calendar-check" style="color: var(--success);"></i> Días Activos:</span>
+                <span class="cal-stat-val" id="cal-active-days">0</span>
+              </div>
+              <div class="cal-stat">
+                <span class="cal-stat-label"><i class="fa-solid fa-chart-line" style="color: var(--warning);"></i> Promedio Diario:</span>
+                <span class="cal-stat-val" id="cal-avg-hours">0.0 h/día</span>
+              </div>
+            </div>
+
+            <!-- Grilla del Calendario -->
+            <div class="calendar-grid-header">
+              <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+            </div>
+            <div class="calendar-grid-days" id="calendar-days-container">
+              <!-- Celdas generadas por JS -->
+            </div>
+            
+            <div style="margin-top: 16px; font-size: 12px; color: var(--text-secondary); text-align: center; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+              <span><i class="fa-solid fa-circle" style="color: #10b981;"></i> ≥ 8h (Jornada Completa)</span>
+              <span><i class="fa-solid fa-circle" style="color: #06b6d4;"></i> 4h - 7.5h (Media Jornada)</span>
+              <span><i class="fa-solid fa-circle" style="color: #f59e0b;"></i> &lt; 4h (Parcial)</span>
+              <span><i class="fa-solid fa-flag" style="color: #ef4444;"></i> Feriado de Chile</span>
+              <span><i class="fa-solid fa-hand-pointer" style="color: #a5b4fc;"></i> Clic en un día para ver su detalle</span>
+            </div>
+          </div>
+
+          <!-- VISTA 3: HISTORIAL GENERAL Y BÚSQUEDA -->
+          <div id="view-history" class="view-pane">
+            <div class="card-title" style="margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <i class="fa-solid fa-list-check"></i> Auditoría e Historial Completo
+              </div>
+              <div class="badge" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-size: 13px; padding: 6px 12px;">
+                <i class="fa-solid fa-calculator" style="margin-right: 6px;"></i> Total Filtrado: <strong id="historial-total-horas">0.0</strong> h
+              </div>
+            </div>
+            
+            <!-- Filtros de búsqueda -->
+            <div class="table-header">
+              <div class="filter-bar">
+                <select id="filter-lugar" class="form-control" style="width: auto; flex: 1; min-width: 150px;">
+                  <option value="Todos">All Clientes/Lugares</option>
+                </select>
+                <select id="filter-actividad" class="form-control" style="width: auto; flex: 1; min-width: 150px;">
+                  <option value="Todas">Todas las Actividades</option>
+                </select>
+                <input type="text" id="filter-search" class="form-control" placeholder="🔍 Buscar por cliente, actividad o comentario..." style="flex: 2; min-width: 220px;">
+              </div>
+            </div>
+
+            <!-- Tabla de Datos -->
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Lugar / Cliente</th>
+                    <th>Actividad</th>
+                    <th>Horas</th>
+                    <th>Comentario</th>
+                    <th style="width: 85px; text-align: center;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="table-body">
+                  <!-- Se llena dinámicamente con JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- VISTA 4: AGENDA Y PLANNER DE TAREAS -->
+          <div id="view-agenda" class="view-pane">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0; font-size: 16px; color: #f8fafc;"><i class="fa-solid fa-calendar-check" style="color: #10b981;"></i> Agenda & Checklist de Tareas</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">Programa tus tareas con aviso previo de 5 a 10 min y gestiónalas como checklist.</p>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-nueva-tarea-agenda" onclick="openAgendaModal()" style="background: #10b981; border-color: #10b981;">
+                <i class="fa-solid fa-plus"></i> + Agendar Nueva Tarea
+              </button>
+            </div>
+
+            <!-- Filtros de la Agenda -->
+            <div class="agenda-filter-bar">
+              <div class="agenda-filter-group">
+                <button type="button" class="btn-filter-agenda active" data-fecha-filter="todas">Todas</button>
+                <button type="button" class="btn-filter-agenda" data-fecha-filter="hoy">Hoy</button>
+                <button type="button" class="btn-filter-agenda" data-fecha-filter="manana">Mañana</button>
+                <button type="button" class="btn-filter-agenda" data-fecha-filter="proximas">Próximas</button>
+              </div>
+              <div class="agenda-filter-group" style="margin-left: auto;">
+                <select id="select-filter-estado-agenda" class="form-control" style="width: auto; min-width: 140px; font-size: 13px; padding: 6px 10px;">
+                  <option value="todos">Todos los Estados</option>
+                  <option value="pendiente">⏳ Pendientes</option>
+                  <option value="en_progreso">🔄 En Progreso</option>
+                  <option value="completada">✅ Completadas</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Contenedor de Tarjetas de Tareas -->
+            <div id="agenda-cards-container" class="agenda-cards-grid">
+              <!-- Se llena dinámicamente con JS -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Modal para Editar Registro -->
+  <div id="modal-edit" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i> Editar Registro de Horas</h3>
+        <button class="close-btn" onclick="closeEditModal()">&times;</button>
+      </div>
+      <form id="form-edit">
+        <div class="form-group">
+          <label class="form-label" for="edit-fecha">Fecha</label>
+          <input type="date" id="edit-fecha" class="form-control" required>
+          <div id="edit-fecha-holiday-notice" class="form-holiday-notice" style="display: none;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-lugar">¿A dónde fui? / Cliente / Proyecto</label>
+          <input type="text" id="edit-lugar" class="form-control" list="lugar_list_web" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-actividad">Actividad</label>
+          <input type="text" id="edit-actividad" class="form-control" list="actividad_list_web" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-horas">Horas Trabajadas</label>
+          <input type="number" step="0.5" min="0.5" max="24" id="edit-horas" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-comentario">Comentario Complementario</label>
+          <textarea id="edit-comentario" class="form-control"></textarea>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn btn-outline" onclick="closeEditModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Actualizar Registro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para Configurar Alarmas y Recordatorios -->
+  <div id="modal-config-alarmas" class="modal-overlay">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-clock" style="color: #818cf8;"></i> Gestor de Alarmas y Avisos</h3>
+        <button class="close-btn" onclick="closeConfigAlarmasModal()">&times;</button>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
+          Configura alertas periódicas o programadas para no olvidar nada.
+        </p>
+        <div style="display: flex; gap: 10px;">
+          <input type="file" id="audio-file-alerta" accept=".wav,.mp3" style="display: none;" onchange="uploadAudio('alerta')">
+          <button type="button" class="btn btn-outline" style="border-color: #818cf8; color: #818cf8; font-size: 13px; padding: 6px 12px;" onclick="document.getElementById('audio-file-alerta').click()" title="Subir sonido por defecto para alarmas">
+            <i class="fa-solid fa-music"></i> Audio General
+          </button>
+          <button type="button" class="btn btn-outline" style="border-color: #10b981; color: #10b981; font-size: 13px; padding: 6px 12px;" onclick="agregarNuevaAlarmaUI()">
+            <i class="fa-solid fa-plus"></i> Nueva Alarma
+          </button>
+        </div>
+      </div>
+
+      <form id="form-config-alarmas">
+        <!-- Contenedor dinámico de alarmas -->
+        <div id="alarmas-dinamicas-container" style="max-height: 50vh; overflow-y: auto; padding-right: 8px; margin-bottom: 20px;">
+          <!-- Se llenan con JS -->
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+          <div>
+            <button type="button" id="btn-toggle-global-alarmas" class="btn btn-outline" style="border-color: #f43f5e; color: #f43f5e; font-size: 13px;">
+              <i class="fa-solid fa-power-off"></i> Apagar Sistema de Alarmas
+            </button>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <button type="button" class="btn btn-outline" onclick="closeConfigAlarmasModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" style="background: #6366f1; border-color: #6366f1;">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar Todo
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para Agendar / Editar Tarea en la Agenda -->
+  <div id="modal-agenda" class="modal-overlay">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 id="modal-agenda-title"><i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Agendar Nueva Tarea</h3>
+        <button class="close-btn" onclick="closeAgendaModal()">&times;</button>
+      </div>
+      <form id="form-agenda">
+        <input type="hidden" id="agenda-id">
+        <div class="form-group">
+          <label class="form-label" for="agenda-titulo"><i class="fa-solid fa-heading" style="color: var(--primary);"></i> Título de la Tarea</label>
+          <input type="text" id="agenda-titulo" class="form-control" placeholder="Ej: Carga de sucursales, Reunión técnica..." required autocomplete="off">
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label class="form-label" for="agenda-fecha"><i class="fa-regular fa-calendar"></i> Fecha Programada (Opcional)</label>
+            <input type="date" id="agenda-fecha" class="form-control">
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 130px;">
+            <label class="form-label" for="agenda-hora"><i class="fa-regular fa-clock"></i> Hora de Inicio (Opcional)</label>
+            <input type="time" id="agenda-hora" class="form-control" value="09:00">
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 180px;">
+            <label class="form-label" for="agenda-minutos-recordatorio"><i class="fa-solid fa-bell" style="color: #f59e0b;"></i> Recordatorio Previo</label>
+            <select id="agenda-minutos-recordatorio" class="form-control">
+              <option value="5">5 minutos antes</option>
+              <option value="10" selected>10 minutos antes (Recomendado)</option>
+              <option value="15">15 minutos antes</option>
+              <option value="30">30 minutos antes</option>
+              <option value="0">A la hora exacta</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 140px;">
+            <label class="form-label" for="agenda-estado"><i class="fa-solid fa-tasks"></i> Estado</label>
+            <select id="agenda-estado" class="form-control">
+              <option value="pendiente">⏳ Pendiente</option>
+              <option value="en_progreso">🔄 En Progreso</option>
+              <option value="completada">✅ Completada</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 160px;">
+            <label class="form-label" for="agenda-lugar"><i class="fa-solid fa-building-user"></i> Cliente / Proyecto (Opcional)</label>
+            <input type="text" id="agenda-lugar" class="form-control" list="lugar_list_web" placeholder="Ej: Sucursal Norte..." autocomplete="off">
+          </div>
+          <div class="form-group" style="flex: 0.8; min-width: 120px;">
+            <label class="form-label" for="agenda-horas-estimadas"><i class="fa-solid fa-stopwatch"></i> Horas Est.</label>
+            <input type="number" step="0.5" min="0.5" max="24" id="agenda-horas-estimadas" class="form-control" value="1.0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="agenda-descripcion"><i class="fa-regular fa-comment-dots"></i> Descripción / Checklist de Subtareas</label>
+          <textarea id="agenda-descripcion" class="form-control" rows="3" placeholder="Ej: Verificar inventario, cargar planilla de datos, enviar correo de confirmación..."></textarea>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" onclick="closeAgendaModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="background: #10b981; border-color: #10b981;">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar en Agenda
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para Convertir Tarea a Registro de Horas -->
+  <div id="modal-convertir" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="modal-convertir-title"><i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Cargar a Mis Horas</h3>
+        <button class="close-btn" onclick="closeConvertirModal()">&times;</button>
+      </div>
+      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+        Revisa y ajusta los detalles antes de registrar esta tarea como completada en tus horas trabajadas.
+      </p>
+      <form id="form-convertir">
+        <input type="hidden" id="convertir-id">
+        <div class="form-group">
+          <label class="form-label" for="convertir-fecha"><i class="fa-regular fa-calendar"></i> ¿A qué día cargarlo?</label>
+          <input type="date" id="convertir-fecha" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="convertir-horas"><i class="fa-solid fa-clock"></i> Horas Reales Trabajadas</label>
+          <input type="number" step="0.5" min="0.5" max="24" id="convertir-horas" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="convertir-lugar"><i class="fa-solid fa-building-user"></i> Cliente / Proyecto</label>
+          <input type="text" id="convertir-lugar" class="form-control" list="lugar_list_web" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="convertir-actividad"><i class="fa-solid fa-briefcase"></i> Actividad (Título original)</label>
+          <input type="text" id="convertir-actividad" class="form-control" list="actividad_list_web" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="convertir-comentario"><i class="fa-regular fa-comment-dots"></i> Comentario Final (Opcional)</label>
+          <textarea id="convertir-comentario" class="form-control" rows="2"></textarea>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" onclick="closeConvertirModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="background: #f59e0b; border-color: #f59e0b; color: #1e293b; font-weight: 600;">
+            <i class="fa-solid fa-check-double"></i> Confirmar y Cargar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Datalists para autocompletado inteligente -->
+  <datalist id="lugar_list_web"></datalist>
+  <datalist id="actividad_list_web"></datalist>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}?v={{ cache_v }}"></script>
+</body>
+</html>

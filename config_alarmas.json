@@ -1,0 +1,24 @@
+{
+  "alarmas": [
+    {
+      "activo": true,
+      "dia_semana": -2,
+      "hora": "00:00",
+      "id": "recordatorio_periodico",
+      "intervalo_minutos": 60,
+      "mensaje": "¡Hola! Han pasado los minutos configurados. Recuerda registrar tus actividades y horas trabajadas.",
+      "nombre": "Alerta Periódica de Actividad",
+      "tipo": "periodica"
+    },
+    {
+      "activo": true,
+      "dia_semana": 4,
+      "hora": "17:00",
+      "id": "alarma_carga_sistemas",
+      "intervalo_minutos": 0,
+      "mensaje": "¡Hola! Es hora del aviso programado. Recuerda cargar y revisar todas tus horas de trabajo en la Bitácora y en el People Space antes de finalizar.",
+      "nombre": "Alerta de Bitácora & People Space",
+      "tipo": "programada"
+    }
+  ]
+}

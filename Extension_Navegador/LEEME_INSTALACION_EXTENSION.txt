@@ -1,0 +1,31 @@
+====================================================================
+  GUÍA RÁPIDA: INSTALAR EXTENSIÓN CRONÓMETRO EN CHROME O EDGE
+====================================================================
+
+¡Bienvenido! Esta extensión conecta tu navegador (Google Chrome, Edge, Brave)
+directamente con tu Sistema de Gestión de Horas Pro local. Te permite llevar
+un cronómetro en vivo de tus tareas o hacer ingresos manuales sin abrir la web.
+
+PASOS PARA INSTALAR EN 30 SEGUNDOS:
+
+1. Abre tu navegador (Google Chrome o Microsoft Edge).
+2. En la barra de direcciones superior, escribe y entra a:
+   - En Google Chrome:   chrome://extensions/
+   - En Microsoft Edge:  edge://extensions/
+3. En la esquina superior derecha, activa el interruptor que dice:
+   👉 "Modo de desarrollador" (o "Developer mode").
+4. Aparecerá un botón superior izquierdo que dice:
+   👉 "Cargar descomprimida" (o "Load unpacked").
+5. Haz clic en ese botón y selecciona ESTA MISMA CARPETA (Extension_Navegador).
+6. ¡LISTO! Verás aparecer el icono del reloj esmeralda en tus extensiones.
+
+CONSEJO PRO:
+Haz clic en el ícono de la pieza de rompecabezas 🧩 arriba a la derecha de tu navegador
+y haz clic en el "pin" 📌 al lado de 'Gestión de Horas Pro' para que el reloj
+sea siempre visible en tu barra de tareas.
+
+¿CÓMO FUNCIONA?
+- El cronómetro sigue corriendo en segundo plano aunque cierres la pestaña o cambies de ventana.
+- Cuando haces clic en "🛑 Detener y Guardar", el tiempo se calcula y se guarda al instante
+  en tu base de datos y se verá reflejado en tus descargas de Excel.
+====================================================================

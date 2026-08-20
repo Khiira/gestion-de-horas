@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Gestión de Horas Pro - Cronómetro (Firefox)",
+  "version": "1.0",
+  "description": "Cronómetro inteligente y registro rápido en un clic sincronizado al instante con tu Sistema de Gestión de Horas Pro.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*",
+    "http://localhost:5000/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "gestion-horas-pro@tuempresa.com",
+      "strict_min_version": "109.0"
+    }
+  }
+}
