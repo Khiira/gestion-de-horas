@@ -13,6 +13,7 @@ On Error GoTo 0
 
 WScript.Sleep 600
 
-WshShell.CurrentDirectory = "C:\Users\IgnacioLedezma\Desktop\Codigos Utiles\Trabajo\Gestion de HORAS"
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+WshShell.CurrentDirectory = objFSO.GetParentFolderName(WScript.ScriptFullName)
 ' Ejecutar en segundo plano con pythonw para no mostrar consola (0 = oculto, False = no esperar)
 WshShell.Run "pythonw.exe app.py", 0, False
