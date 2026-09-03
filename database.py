@@ -53,6 +53,20 @@ def init_db():
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo TEXT NOT NULL,
+            tema_principal TEXT DEFAULT 'General',
+            subtema TEXT DEFAULT '',
+            contenido TEXT,
+            fecha TEXT NOT NULL,
+            color TEXT DEFAULT '#3b82f6',
+            fijada INTEGER DEFAULT 0,
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -549,5 +563,104 @@ def marcar_agenda_tarea_notificada(tarea_id):
     cursor.execute('UPDATE agenda_tareas SET notificado = 1 WHERE id = ?', (tarea_id,))
     conn.commit()
     conn.close()
+
+# ==========================================
+# GESTIÓN DE NOTAS Y APUNTES
+# ==========================================
+
+def add_nota(titulo, tema_principal='General', subtema='', contenido='', fecha=None, color='#3b82f6', fijada=0):
+    if not fecha:
+        fecha = datetime.now().strftime('%Y-%m-%d')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO notas (titulo, tema_principal, subtema, contenido, fecha, color, fijada)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (titulo.strip(), (tema_principal or 'General').strip(), (subtema or '').strip(), (contenido or '').strip(), fecha, color or '#3b82f6', 1 if fijada else 0))
+    new_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return get_nota(new_id)
+
+def get_nota(nota_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM notas WHERE id = ?', (nota_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def get_all_notas(search=None, tema=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = 'SELECT * FROM notas WHERE 1=1'
+    params = []
+
+    if tema and tema != 'Todos':
+        query += ' AND tema_principal = ?'
+        params.append(tema)
+
+    if search:
+        query += ' AND (titulo LIKE ? OR tema_principal LIKE ? OR subtema LIKE ? OR contenido LIKE ?)'
+        s_param = f"%{search}%"
+        params.extend([s_param, s_param, s_param, s_param])
+
+    query += ' ORDER BY fijada DESC, fecha DESC, id DESC'
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def update_nota(nota_id, titulo, tema_principal='General', subtema='', contenido='', fecha=None, color='#3b82f6', fijada=0):
+    if not fecha:
+        fecha = datetime.now().strftime('%Y-%m-%d')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE notas
+        SET titulo = ?, tema_principal = ?, subtema = ?, contenido = ?, fecha = ?, color = ?, fijada = ?, actualizado_en = CURRENT_TIMESTAMP
+        WHERE id = ?
+    ''', (titulo.strip(), (tema_principal or 'General').strip(), (subtema or '').strip(), (contenido or '').strip(), fecha, color or '#3b82f6', 1 if fijada else 0, nota_id))
+    conn.commit()
+    conn.close()
+    return get_nota(nota_id)
+
+def delete_nota(nota_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM notas WHERE id = ?', (nota_id,))
+    deleted = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return deleted
+
+def toggle_fijar_nota(nota_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT fijada FROM notas WHERE id = ?', (nota_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return None
+    nuevo_estado = 0 if row['fijada'] else 1
+    cursor.execute('UPDATE notas SET fijada = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?', (nuevo_estado, nota_id))
+    conn.commit()
+    conn.close()
+    return get_nota(nota_id)
+
+def get_temas_notas():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT DISTINCT tema_principal 
+        FROM notas 
+        WHERE tema_principal IS NOT NULL AND tema_principal != '' 
+        ORDER BY tema_principal ASC
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    temas = [row['tema_principal'] for row in rows]
+    return temas
+
 
 

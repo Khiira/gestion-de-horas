@@ -28,8 +28,8 @@
         </div>
       </div>
       <div class="header-actions">
-        <button id="btn-config-alarmas" class="btn btn-outline" style="border-color: rgba(99, 102, 241, 0.5); color: #818cf8;" title="Configurar y programar alarmas y avisos">
-          <i class="fa-solid fa-gear"></i> Configurar Alarmas
+        <button id="btn-config-alarmas" class="btn btn-outline" style="border-color: rgba(99, 102, 241, 0.5); color: #818cf8;" title="Configurar módulos del sistema y alarmas">
+          <i class="fa-solid fa-sliders"></i> Ajustes & Módulos
         </button>
         <button id="btn-export-excel" class="btn btn-success" title="Descargar reporte formateado en Excel (.xlsx)">
           <i class="fa-solid fa-file-excel"></i> Exportar a Excel
@@ -129,14 +129,18 @@
           </div>
           <!-- SELECTOR DE TIPO DE INGRESO -->
           <div style="margin-bottom: 20px;">
-            <div style="display: flex; gap: 15px; padding: 12px; background: rgba(30, 41, 59, 0.5); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; flex: 1;">
+            <div style="display: flex; gap: 8px; padding: 8px; background: rgba(30, 41, 59, 0.5); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap;">
+              <label id="label-tipo-registro" style="cursor: pointer; display: flex; align-items: center; gap: 6px; flex: 1; min-width: 110px;">
                 <input type="radio" name="tipo_ingreso" value="registro" checked onchange="toggleTipoIngreso()"> 
-                <span style="font-weight: 500; font-size: 14px;"><i class="fa-solid fa-clock" style="color: var(--warning);"></i> Registrar Horas (Control)</span>
+                <span style="font-weight: 500; font-size: 13px;"><i class="fa-solid fa-clock" style="color: var(--warning);"></i> Horas</span>
               </label>
-              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; flex: 1;">
+              <label id="label-tipo-agenda" style="cursor: pointer; display: flex; align-items: center; gap: 6px; flex: 1; min-width: 110px;">
                 <input type="radio" name="tipo_ingreso" value="agenda" onchange="toggleTipoIngreso()">
-                <span style="font-weight: 500; font-size: 14px;"><i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Agendar Tarea (Planner)</span>
+                <span style="font-weight: 500; font-size: 13px;"><i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Agenda</span>
+              </label>
+              <label id="label-tipo-nota" style="cursor: pointer; display: flex; align-items: center; gap: 6px; flex: 1; min-width: 110px;">
+                <input type="radio" name="tipo_ingreso" value="nota" onchange="toggleTipoIngreso()">
+                <span style="font-weight: 500; font-size: 13px;"><i class="fa-solid fa-book-bookmark" style="color: #38bdf8;"></i> Tomar Nota</span>
               </label>
             </div>
           </div>
@@ -242,6 +246,55 @@
               </button>
             </form>
           </div>
+
+          <!-- CONTENEDOR 3: NOTAS Y APUNTES -->
+          <div id="contenedor-nota-main" style="display: none;">
+            <form id="form-nota-main">
+              <div class="form-group">
+                <label class="form-label" for="nota-titulo-main"><i class="fa-solid fa-heading" style="color: #38bdf8;"></i> Título del Apunte / Nota</label>
+                <input type="text" id="nota-titulo-main" class="form-control" placeholder="Ej: Recordar revisar bitácora, temas clave..." required autocomplete="off">
+              </div>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 130px;">
+                  <label class="form-label" for="nota-tema-main"><i class="fa-solid fa-tag" style="color: #a855f7;"></i> Tema Principal</label>
+                  <input type="text" id="nota-tema-main" class="form-control" list="temas_list_web" placeholder="Ej: Trabajo, Ideas..." autocomplete="off">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 130px;">
+                  <label class="form-label" for="nota-subtema-main"><i class="fa-solid fa-tags" style="color: #60a5fa;"></i> Subtema (Opcional)</label>
+                  <input type="text" id="nota-subtema-main" class="form-control" placeholder="Ej: Módulo A, Urgente..." autocomplete="off">
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 130px;">
+                  <label class="form-label" for="nota-fecha-main"><i class="fa-regular fa-calendar"></i> Fecha</label>
+                  <input type="date" id="nota-fecha-main" class="form-control">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 130px;">
+                  <label class="form-label" for="nota-color-main"><i class="fa-solid fa-palette"></i> Color</label>
+                  <select id="nota-color-main" class="form-control">
+                    <option value="#3b82f6" selected>🔵 Azul Estándar</option>
+                    <option value="#10b981">🟢 Verde Éxito</option>
+                    <option value="#f59e0b">🟡 Ámbar Pendiente</option>
+                    <option value="#ef4444">🔴 Rojo Urgente</option>
+                    <option value="#8b5cf6">🟣 Púrpura Idea</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="nota-contenido-main"><i class="fa-regular fa-file-lines"></i> Contenido / Apuntes Detallados</label>
+                <textarea id="nota-contenido-main" class="form-control" rows="3" placeholder="Escribe aquí los puntos clave, notas o recordatorios que necesitas tener presente..."></textarea>
+              </div>
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary);">
+                  <input type="checkbox" id="nota-fijada-main" style="width: 16px; height: 16px; accent-color: #38bdf8;">
+                  <span><i class="fa-solid fa-thumbtack" style="color: #38bdf8;"></i> Fijar esta nota como destacada al inicio</span>
+                </label>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 15px; font-size: 15px; margin-top: 4px; background: #0284c7; border-color: #0284c7;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Nota / Apunte
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -250,17 +303,20 @@
         <div class="card" style="min-height: 600px;">
           <!-- Tabs de Navegación -->
           <div class="views-nav-bar">
-            <button type="button" class="view-tab-btn active" data-view="daily">
+            <button type="button" class="view-tab-btn active" data-view="daily" id="nav-btn-daily">
               <i class="fa-solid fa-sun" style="color: #fbbf24;"></i> Enfoque Diario
             </button>
-            <button type="button" class="view-tab-btn" data-view="calendar">
+            <button type="button" class="view-tab-btn" data-view="calendar" id="nav-btn-calendar">
               <i class="fa-solid fa-calendar-days" style="color: #38bdf8;"></i> Calendario
             </button>
-            <button type="button" class="view-tab-btn" data-view="history">
+            <button type="button" class="view-tab-btn" data-view="history" id="nav-btn-history">
               <i class="fa-solid fa-list-check" style="color: #a5b4fc;"></i> Historial General
             </button>
-            <button type="button" class="view-tab-btn" data-view="agenda">
+            <button type="button" class="view-tab-btn" data-view="agenda" id="nav-btn-agenda">
               <i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Agenda & Planner
+            </button>
+            <button type="button" class="view-tab-btn" data-view="notas" id="nav-btn-notas">
+              <i class="fa-solid fa-book-bookmark" style="color: #38bdf8;"></i> Notas & Apuntes
             </button>
           </div>
 
@@ -284,7 +340,7 @@
               </button>
             </div>
 
-            <!-- Barra de Progreso y Tranquilidad -->
+            <!-- Barra de Progreso y Tranquilidad (3 Barras de Progreso) -->
             <div class="tranquility-box">
               <div class="tranquility-header">
                 <span><i class="fa-solid fa-heart-pulse" style="color: #f43f5e;"></i> Estado de Jornada del Día</span>
@@ -294,9 +350,40 @@
                   <i class="fa-solid fa-pen-to-square" style="font-size: 12px; color: var(--primary); cursor: pointer;" title="Editar meta diaria" id="btn-edit-target"></i>
                 </span>
               </div>
-              <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="daily-progress-fill" style="width: 0%;"></div>
+
+              <!-- Barra 1: Total General -->
+              <div class="progress-sub-block">
+                <div class="progress-sub-label">
+                  <span><i class="fa-solid fa-gauge-high" style="color: #38bdf8;"></i> Total de la Jornada (General)</span>
+                  <span class="sub-progress-val"><strong id="daily-progress-val-total">0.0</strong> / <span id="daily-hours-target-sub">8.0</span> h (<span id="daily-pct-general">0%</span>)</span>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill fill-general" id="daily-progress-fill" style="width: 0%;"></div>
+                </div>
               </div>
+
+              <!-- Barra 2: Clientes & Proyectos Normales -->
+              <div class="progress-sub-block">
+                <div class="progress-sub-label">
+                  <span><i class="fa-solid fa-briefcase" style="color: #10b981;"></i> Clientes & Proyectos Normales</span>
+                  <span class="sub-progress-val"><strong id="daily-hours-normal">0.0</strong> h (<span id="daily-pct-normal">0%</span> de jornada)</span>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill fill-normal" id="daily-progress-fill-normal" style="width: 0%;"></div>
+                </div>
+              </div>
+
+              <!-- Barra 3: Interno & Personal -->
+              <div class="progress-sub-block">
+                <div class="progress-sub-label">
+                  <span><i class="fa-solid fa-user-tag" style="color: #c084fc;"></i> Interno & Personal</span>
+                  <span class="sub-progress-val"><strong id="daily-hours-interno">0.0</strong> h (<span id="daily-pct-interno">0%</span> de jornada)</span>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill fill-interno" id="daily-progress-fill-interno" style="width: 0%;"></div>
+                </div>
+              </div>
+
               <div class="tranquility-message" id="daily-tranquility-msg">
                 🌱 Día limpio. ¡Comienza a registrar tu tiempo con tranquilidad cuando estés listo!
               </div>
@@ -455,6 +542,35 @@
             </div>
           </div>
 
+          <!-- VISTA 5: NOTAS Y APUNTES -->
+          <div id="view-notas" class="view-pane">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0; font-size: 16px; color: #f8fafc;"><i class="fa-solid fa-book-bookmark" style="color: #38bdf8;"></i> Notas & Apuntes de Trabajo</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">Guarda apuntes, temas pendientes, ideas y recordatorios importantes con clasificación por temas.</p>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-nueva-nota" onclick="openNotaModal()" style="background: #0284c7; border-color: #0284c7;">
+                <i class="fa-solid fa-plus"></i> + Nueva Nota
+              </button>
+            </div>
+
+            <!-- Filtros y Búsqueda de Notas -->
+            <div class="notas-filter-bar" style="display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;">
+              <input type="text" id="filter-search-notas" class="form-control" placeholder="🔍 Buscar notas por título, tema o contenido..." style="flex: 2; min-width: 220px;" oninput="debounceFilterNotas()">
+              <select id="filter-tema-notas" class="form-control" style="flex: 1; min-width: 170px;" onchange="loadNotas()">
+                <option value="Todos">Todos los Temas</option>
+              </select>
+              <div id="notas-count-badge" class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 13px; padding: 8px 12px;">
+                0 notas
+              </div>
+            </div>
+
+            <!-- Contenedor de Tarjetas de Notas -->
+            <div id="notas-cards-container" class="notas-grid">
+              <!-- Se llena dinámicamente con JS -->
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -499,49 +615,148 @@
     </div>
   </div>
 
-  <!-- Modal para Configurar Alarmas y Recordatorios -->
+  <!-- Modal para Configurar Módulos y Alarmas -->
   <div id="modal-config-alarmas" class="modal-overlay">
-    <div class="modal-content" style="max-width: 650px;">
+    <div class="modal-content" style="max-width: 680px;">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-clock" style="color: #818cf8;"></i> Gestor de Alarmas y Avisos</h3>
+        <h3><i class="fa-solid fa-sliders" style="color: #818cf8;"></i> Ajustes del Sistema & Módulos</h3>
         <button class="close-btn" onclick="closeConfigAlarmasModal()">&times;</button>
       </div>
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
-          Configura alertas periódicas o programadas para no olvidar nada.
+
+      <!-- Selector de Pestañas de Configuración -->
+      <div class="cfg-modal-nav" style="display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+        <button type="button" class="cfg-modal-tab-btn active" id="btn-tab-cfg-modulos" onclick="switchConfigModalTab('modulos')">
+          <i class="fa-solid fa-toggle-on" style="color: #38bdf8;"></i> Módulos y Secciones
+        </button>
+        <button type="button" class="cfg-modal-tab-btn" id="btn-tab-cfg-alarmas" onclick="switchConfigModalTab('alarmas')">
+          <i class="fa-solid fa-clock" style="color: #818cf8;"></i> Alarmas y Avisos
+        </button>
+      </div>
+
+      <!-- PANEL 1: GESTIÓN DE MÓDULOS / SECCIONES ACTIVAS -->
+      <div id="pane-cfg-modulos" class="cfg-modal-pane active">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+          Elige qué secciones y herramientas deseas tener activas en tu espacio de trabajo. Las secciones deshabilitadas se ocultarán inmediatamente para mantener tu interfaz limpia y enfocada.
         </p>
-        <div style="display: flex; gap: 10px;">
-          <input type="file" id="audio-file-alerta" accept=".wav,.mp3" style="display: none;" onchange="uploadAudio('alerta')">
-          <button type="button" class="btn btn-outline" style="border-color: #818cf8; color: #818cf8; font-size: 13px; padding: 6px 12px;" onclick="document.getElementById('audio-file-alerta').click()" title="Subir sonido por defecto para alarmas">
-            <i class="fa-solid fa-music"></i> Audio General
-          </button>
-          <button type="button" class="btn btn-outline" style="border-color: #10b981; color: #10b981; font-size: 13px; padding: 6px 12px;" onclick="agregarNuevaAlarmaUI()">
-            <i class="fa-solid fa-plus"></i> Nueva Alarma
+
+        <div class="modules-toggle-list" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+          
+          <!-- Módulo 1: Control de Horas -->
+          <div class="module-toggle-item" style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-color); border-radius: 10px;">
+            <div style="flex: 1; padding-right: 15px;">
+              <div style="font-weight: 600; font-size: 14px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-stopwatch" style="color: #fbbf24;"></i> Control de Horas
+                <span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; font-size: 11px; padding: 2px 6px;">Jornada / Calendario / Historial</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Habilita el registro de sesiones, la barra de progreso diario, el calendario mensual y la auditoría con filtros.
+              </div>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="switch-mod-horas" checked onchange="toggleModuloOption('horas', this.checked)">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Módulo 2: Agenda & Planner -->
+          <div class="module-toggle-item" style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-color); border-radius: 10px;">
+            <div style="flex: 1; padding-right: 15px;">
+              <div style="font-weight: 600; font-size: 14px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Agenda & Planner de Tareas
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 11px; padding: 2px 6px;">Checklist & Avisos</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Programación de tareas futuras con recordatorio previo de 5 a 10 min y checklist para convertirlas a horas trabajadas.
+              </div>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="switch-mod-agenda" checked onchange="toggleModuloOption('agenda', this.checked)">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Módulo 3: Notas y Apuntes -->
+          <div class="module-toggle-item" style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-color); border-radius: 10px;">
+            <div style="flex: 1; padding-right: 15px;">
+              <div style="font-weight: 600; font-size: 14px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-book-bookmark" style="color: #38bdf8;"></i> Notas & Apuntes
+                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 11px; padding: 2px 6px;">Nuevo</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Bloc de apuntes de trabajo clasificados por temas principales y subtareas a tener presentes con opción de fijar al inicio.
+              </div>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="switch-mod-notas" checked onchange="toggleModuloOption('notas', this.checked)">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Módulo 4: Dashboard de Gráficos Analíticos -->
+          <div class="module-toggle-item" style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border-color); border-radius: 10px;">
+            <div style="flex: 1; padding-right: 15px;">
+              <div style="font-weight: 600; font-size: 14px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-chart-pie" style="color: #a855f7;"></i> Dashboard Analítico
+                <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; font-size: 11px; padding: 2px 6px;">Gráficos</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Panel visual con gráficos circulares y de tendencia diaria de horas por cliente y actividad.
+              </div>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="switch-mod-dashboard" checked onchange="toggleModuloOption('dashboard', this.checked)">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+          <button type="button" class="btn btn-primary" onclick="closeConfigAlarmasModal()" style="background: #3b82f6; border-color: #3b82f6;">
+            <i class="fa-solid fa-check"></i> Listo
           </button>
         </div>
       </div>
 
-      <form id="form-config-alarmas">
-        <!-- Contenedor dinámico de alarmas -->
-        <div id="alarmas-dinamicas-container" style="max-height: 50vh; overflow-y: auto; padding-right: 8px; margin-bottom: 20px;">
-          <!-- Se llenan con JS -->
+      <!-- PANEL 2: GESTIÓN DE ALARMAS Y AVISOS -->
+      <div id="pane-cfg-alarmas" class="cfg-modal-pane" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
+            Configura alertas periódicas o programadas para no olvidar nada.
+          </p>
+          <div style="display: flex; gap: 10px;">
+            <input type="file" id="audio-file-alerta" accept=".wav,.mp3" style="display: none;" onchange="uploadAudio('alerta')">
+            <button type="button" class="btn btn-outline" style="border-color: #818cf8; color: #818cf8; font-size: 13px; padding: 6px 12px;" onclick="document.getElementById('audio-file-alerta').click()" title="Subir sonido por defecto para alarmas">
+              <i class="fa-solid fa-music"></i> Audio General
+            </button>
+            <button type="button" class="btn btn-outline" style="border-color: #10b981; color: #10b981; font-size: 13px; padding: 6px 12px;" onclick="agregarNuevaAlarmaUI()">
+              <i class="fa-solid fa-plus"></i> Nueva Alarma
+            </button>
+          </div>
         </div>
 
-        <div style="display: flex; gap: 12px; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
-          <div>
-            <button type="button" id="btn-toggle-global-alarmas" class="btn btn-outline" style="border-color: #f43f5e; color: #f43f5e; font-size: 13px;">
-              <i class="fa-solid fa-power-off"></i> Apagar Sistema de Alarmas
-            </button>
+        <form id="form-config-alarmas">
+          <!-- Contenedor dinámico de alarmas -->
+          <div id="alarmas-dinamicas-container" style="max-height: 48vh; overflow-y: auto; padding-right: 8px; margin-bottom: 20px;">
+            <!-- Se llenan con JS -->
           </div>
-          <div style="display: flex; gap: 12px;">
-            <button type="button" class="btn btn-outline" onclick="closeConfigAlarmasModal()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" style="background: #6366f1; border-color: #6366f1;">
-              <i class="fa-solid fa-floppy-disk"></i> Guardar Todo
-            </button>
+
+          <div style="display: flex; gap: 12px; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+            <div>
+              <button type="button" id="btn-toggle-global-alarmas" class="btn btn-outline" style="border-color: #f43f5e; color: #f43f5e; font-size: 13px;">
+                <i class="fa-solid fa-power-off"></i> Apagar Sistema de Alarmas
+              </button>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button type="button" class="btn btn-outline" onclick="closeConfigAlarmasModal()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" style="background: #6366f1; border-color: #6366f1;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Todo
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
+
     </div>
   </div>
 
@@ -654,12 +869,72 @@
     </div>
   </div>
 
+  <!-- Modal para Crear / Editar Nota -->
+  <div id="modal-nota" class="modal-overlay">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 id="modal-nota-title"><i class="fa-solid fa-book-bookmark" style="color: #38bdf8;"></i> Nueva Nota / Apunte</h3>
+        <button class="close-btn" onclick="closeNotaModal()">&times;</button>
+      </div>
+      <form id="form-nota">
+        <input type="hidden" id="nota-id">
+        <div class="form-group">
+          <label class="form-label" for="nota-titulo"><i class="fa-solid fa-heading" style="color: #38bdf8;"></i> Título de la Nota</label>
+          <input type="text" id="nota-titulo" class="form-control" placeholder="Ej: Revisión de Servidor, Pendientes Cliente ABC..." required autocomplete="off">
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label class="form-label" for="nota-tema"><i class="fa-solid fa-tag" style="color: #a855f7;"></i> Tema Principal</label>
+            <input type="text" id="nota-tema" class="form-control" list="temas_list_web" placeholder="Ej: Trabajo, Proyecto..." autocomplete="off">
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label class="form-label" for="nota-subtema"><i class="fa-solid fa-tags" style="color: #60a5fa;"></i> Subtema / Subtítulo</label>
+            <input type="text" id="nota-subtema" class="form-control" placeholder="Ej: Fase 2, Urgente..." autocomplete="off">
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label class="form-label" for="nota-fecha"><i class="fa-regular fa-calendar"></i> Fecha de Registro</label>
+            <input type="date" id="nota-fecha" class="form-control" required>
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label class="form-label" for="nota-color"><i class="fa-solid fa-palette"></i> Color Distintivo</label>
+            <select id="nota-color" class="form-control">
+              <option value="#3b82f6" selected>🔵 Azul Estándar</option>
+              <option value="#10b981">🟢 Verde Éxito</option>
+              <option value="#f59e0b">🟡 Ámbar Pendiente</option>
+              <option value="#ef4444">🔴 Rojo Urgente</option>
+              <option value="#8b5cf6">🟣 Púrpura Idea</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="nota-contenido"><i class="fa-regular fa-file-lines"></i> Contenido y Apuntes</label>
+          <textarea id="nota-contenido" class="form-control" rows="5" placeholder="Escribe aquí los apuntes o detalles que necesitas tener presente..."></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary);">
+            <input type="checkbox" id="nota-fijada" style="width: 16px; height: 16px; accent-color: #38bdf8;">
+            <span><i class="fa-solid fa-thumbtack" style="color: #38bdf8;"></i> Fijar esta nota como destacada al inicio</span>
+          </label>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" class="btn btn-outline" onclick="closeNotaModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="background: #0284c7; border-color: #0284c7;">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Nota
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Contenedor de Notificaciones Toast -->
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Datalists para autocompletado inteligente -->
   <datalist id="lugar_list_web"></datalist>
   <datalist id="actividad_list_web"></datalist>
+  <datalist id="temas_list_web"></datalist>
 
   <script src="{{ url_for('static', filename='js/app.js') }}?v={{ cache_v }}"></script>
 </body>

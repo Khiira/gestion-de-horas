@@ -119,6 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initDailyView();
     initCalendarView();
     initAgendaView();
+    initNotasView();
+    initModulosConfig();
   } catch(e) {
     console.error("Error en sistema de vistas:", e);
   }
@@ -138,12 +140,28 @@ document.addEventListener('DOMContentLoaded', () => {
       await saveAgendaTareaFromMain();
     });
   }
+
+  const formNotaMain = document.getElementById('form-nota-main');
+  if (formNotaMain) {
+    formNotaMain.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveNotaFromMain();
+    });
+  }
   
   const formEdit = document.getElementById('form-edit');
   if (formEdit) {
     formEdit.addEventListener('submit', async (e) => {
       e.preventDefault();
       await saveEditRegistro();
+    });
+  }
+
+  const formNota = document.getElementById('form-nota');
+  if (formNota) {
+    formNota.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveNota();
     });
   }
 
@@ -761,6 +779,8 @@ function refreshViews() {
     loadRegistros();
   } else if (activeView === 'agenda') {
     loadAgendaView();
+  } else if (activeView === 'notas') {
+    loadNotas();
   }
 }
 
@@ -877,26 +897,59 @@ async function loadDailyView(dateStr) {
       currentDailyRecords = result.data || [];
       const totalHours = currentDailyRecords.reduce((sum, r) => sum + Number(r.horas), 0);
       
+      // Separar horas normales (clientes/proyectos) e internas/personales
+      const internalHours = currentDailyRecords.reduce((sum, r) => {
+        const isPersonal = (r.lugar || '').toLowerCase().includes('interno');
+        return isPersonal ? sum + Number(r.horas) : sum;
+      }, 0);
+      const normalHours = Math.max(0, totalHours - internalHours);
+      
       if (elCount) elCount.textContent = totalHours.toFixed(1);
       
-      // Porcentaje de barra de progreso
-      const pct = Math.min(100, (totalHours / dailyTargetHours) * 100);
-      if (elFill) elFill.style.width = `${pct}%`;
+      // Elementos de desglose de las 3 barras de progreso
+      const elValTotal = document.getElementById('daily-progress-val-total');
+      const elTargetSub = document.getElementById('daily-hours-target-sub');
+      const elPctGeneral = document.getElementById('daily-pct-general');
+      const elHoursNormal = document.getElementById('daily-hours-normal');
+      const elPctNormal = document.getElementById('daily-pct-normal');
+      const elHoursInterno = document.getElementById('daily-hours-interno');
+      const elPctInterno = document.getElementById('daily-pct-interno');
+      const elFillNormal = document.getElementById('daily-progress-fill-normal');
+      const elFillInterno = document.getElementById('daily-progress-fill-interno');
+
+      if (elValTotal) elValTotal.textContent = totalHours.toFixed(1);
+      if (elTargetSub) elTargetSub.textContent = dailyTargetHours.toFixed(1);
+      if (elHoursNormal) elHoursNormal.textContent = normalHours.toFixed(1);
+      if (elHoursInterno) elHoursInterno.textContent = internalHours.toFixed(1);
       
-      // Mensaje motivador de tranquilidad
+      // Porcentajes de barras de progreso respecto a la meta diaria
+      const pctGeneral = Math.min(100, (totalHours / dailyTargetHours) * 100);
+      const pctNormal = Math.min(100, (normalHours / dailyTargetHours) * 100);
+      const pctInterno = Math.min(100, (internalHours / dailyTargetHours) * 100);
+
+      if (elFill) elFill.style.width = `${pctGeneral}%`;
+      if (elPctGeneral) elPctGeneral.textContent = `${pctGeneral.toFixed(0)}%`;
+
+      if (elFillNormal) elFillNormal.style.width = `${pctNormal}%`;
+      if (elPctNormal) elPctNormal.textContent = `${pctNormal.toFixed(0)}%`;
+
+      if (elFillInterno) elFillInterno.style.width = `${pctInterno}%`;
+      if (elPctInterno) elPctInterno.textContent = `${pctInterno.toFixed(0)}%`;
+      
+      // Mensaje motivador de tranquilidad con desglose
       if (elMsg) {
         if (totalHours === 0) {
           elMsg.innerHTML = '🌱 <strong>Día limpio.</strong> ¡Comienza a registrar tu tiempo con tranquilidad cuando estés listo!';
         } else if (totalHours < dailyTargetHours * 0.5) {
-          elMsg.innerHTML = `🚀 <strong>Buen comienzo.</strong> Llevas ${totalHours.toFixed(1)}h registradas en este bloque. ¡Sigue adelante a tu ritmo!`;
+          elMsg.innerHTML = `🚀 <strong>Buen comienzo.</strong> Llevas ${totalHours.toFixed(1)}h (${normalHours.toFixed(1)}h clientes / ${internalHours.toFixed(1)}h personal). ¡Sigue adelante a tu ritmo!`;
         } else if (totalHours < dailyTargetHours) {
           const falta = (dailyTargetHours - totalHours).toFixed(1);
-          elMsg.innerHTML = `⚡ <strong>¡Gran ritmo de trabajo!</strong> Llevas ${totalHours.toFixed(1)}h. Solo faltan ${falta}h para tu objetivo diario.`;
+          elMsg.innerHTML = `⚡ <strong>¡Gran ritmo!</strong> Llevas ${totalHours.toFixed(1)}h (${normalHours.toFixed(1)}h clientes / ${internalHours.toFixed(1)}h personal). Faltan ${falta}h para tu meta diaria.`;
         } else if (totalHours === dailyTargetHours || totalHours <= dailyTargetHours + 0.5) {
-          elMsg.innerHTML = `✨ <strong>¡Objetivo de la jornada cumplido!</strong> Has alcanzado tus ${dailyTargetHours.toFixed(1)} horas. ¡Excelente trabajo y dedicación!`;
+          elMsg.innerHTML = `✨ <strong>¡Objetivo diario cumplido!</strong> Has alcanzado ${dailyTargetHours.toFixed(1)}h (${normalHours.toFixed(1)}h clientes / ${internalHours.toFixed(1)}h personal). ¡Excelente dedicación!`;
         } else {
           const extra = (totalHours - dailyTargetHours).toFixed(1);
-          elMsg.innerHTML = `🔥 <strong>¡Superaste tu meta en ${extra}h!</strong> Has registrado ${totalHours.toFixed(1)}h hoy. Recuerda descansar y desconectar.`;
+          elMsg.innerHTML = `🔥 <strong>¡Superaste tu meta en ${extra}h!</strong> Has registrado ${totalHours.toFixed(1)}h (${normalHours.toFixed(1)}h clientes / ${internalHours.toFixed(1)}h personal). Recuerda descansar.`;
         }
       }
       
@@ -1750,18 +1803,27 @@ async function saveAgendaTareaFromMain() {
 }
 
 function toggleTipoIngreso() {
-  const tipo = document.querySelector('input[name="tipo_ingreso"]:checked').value;
-  if (tipo === 'registro') {
-    document.getElementById('contenedor-registro').style.display = 'block';
-    document.getElementById('contenedor-agenda-main').style.display = 'none';
-  } else {
-    document.getElementById('contenedor-registro').style.display = 'none';
-    document.getElementById('contenedor-agenda-main').style.display = 'block';
-    
-    // Auto fill date if empty
+  const checkedRadio = document.querySelector('input[name="tipo_ingreso"]:checked');
+  if (!checkedRadio) return;
+  const tipo = checkedRadio.value;
+  
+  const elReg = document.getElementById('contenedor-registro');
+  const elAge = document.getElementById('contenedor-agenda-main');
+  const elNot = document.getElementById('contenedor-nota-main');
+  
+  if (elReg) elReg.style.display = (tipo === 'registro') ? 'block' : 'none';
+  if (elAge) elAge.style.display = (tipo === 'agenda') ? 'block' : 'none';
+  if (elNot) elNot.style.display = (tipo === 'nota') ? 'block' : 'none';
+  
+  if (tipo === 'agenda') {
     const fechaInput = document.getElementById('agenda-fecha-main');
-    if (!fechaInput.value) {
+    if (fechaInput && !fechaInput.value) {
       fechaInput.value = new Date().toISOString().split('T')[0];
+    }
+  } else if (tipo === 'nota') {
+    const fechaNota = document.getElementById('nota-fecha-main');
+    if (fechaNota && !fechaNota.value) {
+      fechaNota.value = new Date().toISOString().split('T')[0];
     }
   }
 }
@@ -1856,6 +1918,455 @@ async function submitConvertirTarea() {
     }
   } catch (err) {
     showToast("Error al procesar la conversión de tarea", "error");
+  }
+}
+
+/* ==========================================
+   MÓDULO: CONFIGURACIÓN Y GESTIÓN DE MÓDULOS ACTIVOS
+   ========================================== */
+const DEFAULT_MODULOS = {
+  horas: true,
+  agenda: true,
+  notas: true,
+  dashboard: true
+};
+
+function getModulosConfig() {
+  try {
+    const saved = localStorage.getItem('app_active_modules');
+    if (saved) {
+      return { ...DEFAULT_MODULOS, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error("Error leyendo configuración de módulos:", e);
+  }
+  return { ...DEFAULT_MODULOS };
+}
+
+function initModulosConfig() {
+  const cfg = getModulosConfig();
+  applyModulosConfig(cfg);
+}
+
+function applyModulosConfig(cfg = null) {
+  if (!cfg) cfg = getModulosConfig();
+
+  // Actualizar checkboxes de switches en el modal
+  const swHoras = document.getElementById('switch-mod-horas');
+  const swAgenda = document.getElementById('switch-mod-agenda');
+  const swNotas = document.getElementById('switch-mod-notas');
+  const swDashboard = document.getElementById('switch-mod-dashboard');
+
+  if (swHoras) swHoras.checked = !!cfg.horas;
+  if (swAgenda) swAgenda.checked = !!cfg.agenda;
+  if (swNotas) swNotas.checked = !!cfg.notas;
+  if (swDashboard) swDashboard.checked = !!cfg.dashboard;
+
+  // 1. Control de Horas: tabs daily, calendar, history y radio registro
+  const navDaily = document.getElementById('nav-btn-daily');
+  const navCalendar = document.getElementById('nav-btn-calendar');
+  const navHistory = document.getElementById('nav-btn-history');
+  const labelReg = document.getElementById('label-tipo-registro');
+
+  const displayHoras = cfg.horas ? '' : 'none';
+  if (navDaily) navDaily.style.display = displayHoras;
+  if (navCalendar) navCalendar.style.display = displayHoras;
+  if (navHistory) navHistory.style.display = displayHoras;
+  if (labelReg) labelReg.style.display = displayHoras;
+
+  // 2. Agenda & Planner: tab agenda y radio agenda
+  const navAgenda = document.getElementById('nav-btn-agenda');
+  const labelAgenda = document.getElementById('label-tipo-agenda');
+  const displayAgenda = cfg.agenda ? '' : 'none';
+  if (navAgenda) navAgenda.style.display = displayAgenda;
+  if (labelAgenda) labelAgenda.style.display = displayAgenda;
+
+  // 3. Notas & Apuntes: tab notas y radio nota
+  const navNotas = document.getElementById('nav-btn-notas');
+  const labelNota = document.getElementById('label-tipo-nota');
+  const displayNotas = cfg.notas ? '' : 'none';
+  if (navNotas) navNotas.style.display = displayNotas;
+  if (labelNota) labelNota.style.display = displayNotas;
+
+  // 4. Dashboard de Gráficos Analíticos
+  const dashboardCard = document.getElementById('dashboard-card');
+  if (dashboardCard) {
+    dashboardCard.style.display = cfg.dashboard ? '' : 'none';
+  }
+
+  // Guardar coherencia de la vista activa si la actual quedó deshabilitada
+  const isHorasView = ['daily', 'calendar', 'history'].includes(activeView);
+  if (!cfg.horas && isHorasView) {
+    if (cfg.agenda) {
+      switchView('agenda');
+    } else if (cfg.notas) {
+      switchView('notas');
+    }
+  } else if (!cfg.agenda && activeView === 'agenda') {
+    if (cfg.horas) {
+      switchView('daily');
+    } else if (cfg.notas) {
+      switchView('notas');
+    }
+  } else if (!cfg.notas && activeView === 'notas') {
+    if (cfg.horas) {
+      switchView('daily');
+    } else if (cfg.agenda) {
+      switchView('agenda');
+    }
+  }
+
+  // Guardar coherencia del radio button en el panel izquierdo
+  const checkedRadio = document.querySelector('input[name="tipo_ingreso"]:checked');
+  if (checkedRadio) {
+    const parentLabel = checkedRadio.closest('label');
+    if (parentLabel && parentLabel.style.display === 'none') {
+      const radios = document.querySelectorAll('input[name="tipo_ingreso"]');
+      for (const r of radios) {
+        const l = r.closest('label');
+        if (l && l.style.display !== 'none') {
+          r.checked = true;
+          toggleTipoIngreso();
+          break;
+        }
+      }
+    }
+  }
+}
+
+function toggleModuloOption(moduloKey, isChecked) {
+  const cfg = getModulosConfig();
+
+  // Asegurar que al menos un módulo principal permanezca activo
+  const future = { ...cfg, [moduloKey]: isChecked };
+  if (!future.horas && !future.agenda && !future.notas) {
+    showToast("⚠️ Debes mantener al menos una sección principal activa.", "warning");
+    const sw = document.getElementById(`switch-mod-${moduloKey}`);
+    if (sw) sw.checked = true;
+    return;
+  }
+
+  cfg[moduloKey] = isChecked;
+  try {
+    localStorage.setItem('app_active_modules', JSON.stringify(cfg));
+  } catch (e) {
+    console.error("Error guardando modulos:", e);
+  }
+
+  applyModulosConfig(cfg);
+  showToast(`Módulo "${moduloKey.toUpperCase()}" ${isChecked ? 'habilitado' : 'deshabilitado'}.`, "info");
+}
+
+function switchConfigModalTab(tabName) {
+  const btnModulos = document.getElementById('btn-tab-cfg-modulos');
+  const btnAlarmas = document.getElementById('btn-tab-cfg-alarmas');
+  const paneModulos = document.getElementById('pane-cfg-modulos');
+  const paneAlarmas = document.getElementById('pane-cfg-alarmas');
+
+  if (tabName === 'modulos') {
+    if (btnModulos) btnModulos.classList.add('active');
+    if (btnAlarmas) btnAlarmas.classList.remove('active');
+    if (paneModulos) { paneModulos.style.display = 'block'; paneModulos.classList.add('active'); }
+    if (paneAlarmas) { paneAlarmas.style.display = 'none'; paneAlarmas.classList.remove('active'); }
+  } else {
+    if (btnAlarmas) btnAlarmas.classList.add('active');
+    if (btnModulos) btnModulos.classList.remove('active');
+    if (paneAlarmas) { paneAlarmas.style.display = 'block'; paneAlarmas.classList.add('active'); }
+    if (paneModulos) { paneModulos.style.display = 'none'; paneModulos.classList.remove('active'); }
+  }
+}
+
+/* ==========================================
+   MÓDULO: GESTIÓN DE NOTAS Y APUNTES
+   ========================================== */
+let currentNotas = [];
+let currentEditNotaId = null;
+let debounceNotasTimer = null;
+
+function initNotasView() {
+  loadNotas();
+  loadTemasNotas();
+}
+
+async function loadNotas() {
+  const searchInput = document.getElementById('filter-search-notas');
+  const temaSelect = document.getElementById('filter-tema-notas');
+
+  const search = searchInput ? searchInput.value.trim() : '';
+  const tema = temaSelect ? temaSelect.value : '';
+
+  const params = new URLSearchParams();
+  if (search) params.append('search', search);
+  if (tema && tema !== 'Todos') params.append('tema', tema);
+
+  try {
+    const res = await fetch(`/api/notas?${params.toString()}`);
+    const result = await res.json();
+    if (result.status === 'success') {
+      currentNotas = result.data || [];
+      renderNotas(currentNotas);
+      const countBadge = document.getElementById('notas-count-badge');
+      if (countBadge) {
+        countBadge.textContent = `${currentNotas.length} nota${currentNotas.length !== 1 ? 's' : ''}`;
+      }
+    }
+  } catch (err) {
+    console.error("Error al cargar notas:", err);
+  }
+}
+
+function debounceFilterNotas() {
+  clearTimeout(debounceNotasTimer);
+  debounceNotasTimer = setTimeout(() => {
+    loadNotas();
+  }, 250);
+}
+
+function renderNotas(notas) {
+  const container = document.getElementById('notas-cards-container');
+  if (!container) return;
+
+  if (!notas || notas.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: rgba(30, 41, 59, 0.4); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1);">
+        <i class="fa-solid fa-note-sticky" style="font-size: 40px; color: #38bdf8; opacity: 0.6; margin-bottom: 12px; display: inline-block;"></i>
+        <h4 style="font-size: 16px; color: #f8fafc; margin-bottom: 6px;">No tienes notas o apuntes registrados</h4>
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 420px; margin: 0 auto 16px;">
+          Toma apuntes de temas pendientes, recordatorios clave o notas importantes con subtareas a tener presentes.
+        </p>
+        <button type="button" class="btn btn-primary" onclick="openNotaModal()" style="background: #0284c7; border-color: #0284c7; display: inline-flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-plus"></i> Crear Primera Nota
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = notas.map(n => {
+    const color = n.color || '#3b82f6';
+    const isPinned = !!n.fijada;
+    const tema = n.tema_principal || 'General';
+    const subtema = n.subtema ? `<span class="nota-subtema-badge"><i class="fa-solid fa-tags" style="font-size: 10px; margin-right: 3px;"></i>${escapeHtml(n.subtema)}</span>` : '';
+    const fecha = n.fecha ? n.fecha.split('-').reverse().join('/') : '';
+    
+    return `
+      <div class="nota-card ${isPinned ? 'fijada' : ''}" style="--nota-color: ${color};">
+        <div>
+          <div class="nota-header-top">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+              <span class="nota-tag-badge">
+                <i class="fa-solid fa-tag" style="font-size: 10px;"></i>
+                ${escapeHtml(tema)}
+              </span>
+              ${subtema}
+            </div>
+            <button type="button" class="nota-pin-btn ${isPinned ? 'pinned' : ''}" onclick="togglePinNota(${n.id})" title="${isPinned ? 'Desfijar de destacados' : 'Fijar como destacada al inicio'}">
+              <i class="fa-solid fa-thumbtack"></i>
+            </button>
+          </div>
+          
+          <div class="nota-card-title">${escapeHtml(n.titulo)}</div>
+          
+          <div class="nota-card-content">${escapeHtml(n.contenido || 'Sin contenido adicional.')}</div>
+        </div>
+
+        <div class="nota-card-footer">
+          <span><i class="fa-regular fa-calendar" style="margin-right: 4px;"></i>${fecha}</span>
+          <div class="nota-action-btns">
+            <button type="button" class="btn-icon-nota" onclick="editNota(${n.id})" title="Editar nota">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" class="btn-icon-nota delete" onclick="deleteNota(${n.id})" title="Eliminar nota">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openNotaModal(notaId = null) {
+  currentEditNotaId = notaId;
+  const modal = document.getElementById('modal-nota');
+  const title = document.getElementById('modal-nota-title');
+  const form = document.getElementById('form-nota');
+
+  if (!modal) return;
+
+  if (notaId) {
+    const n = currentNotas.find(x => x.id === notaId);
+    if (n) {
+      if (title) title.innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: #38bdf8;"></i> Editar Nota / Apunte';
+      document.getElementById('nota-id').value = n.id;
+      document.getElementById('nota-titulo').value = n.titulo || '';
+      document.getElementById('nota-tema').value = n.tema_principal || 'General';
+      document.getElementById('nota-subtema').value = n.subtema || '';
+      document.getElementById('nota-fecha').value = n.fecha || new Date().toISOString().split('T')[0];
+      document.getElementById('nota-color').value = n.color || '#3b82f6';
+      document.getElementById('nota-contenido').value = n.contenido || '';
+      document.getElementById('nota-fijada').checked = !!n.fijada;
+    }
+  } else {
+    if (title) title.innerHTML = '<i class="fa-solid fa-book-bookmark" style="color: #38bdf8;"></i> Nueva Nota / Apunte';
+    if (form) form.reset();
+    document.getElementById('nota-id').value = '';
+    document.getElementById('nota-fecha').value = new Date().toISOString().split('T')[0];
+    document.getElementById('nota-color').value = '#3b82f6';
+    document.getElementById('nota-fijada').checked = false;
+  }
+
+  modal.classList.add('active');
+}
+
+function closeNotaModal() {
+  const modal = document.getElementById('modal-nota');
+  if (modal) modal.classList.remove('active');
+  currentEditNotaId = null;
+}
+
+function editNota(notaId) {
+  openNotaModal(notaId);
+}
+
+async function saveNota() {
+  const notaId = document.getElementById('nota-id').value;
+  const payload = {
+    titulo: document.getElementById('nota-titulo').value.trim(),
+    tema_principal: document.getElementById('nota-tema').value.trim() || 'General',
+    subtema: document.getElementById('nota-subtema').value.trim(),
+    fecha: document.getElementById('nota-fecha').value,
+    color: document.getElementById('nota-color').value,
+    contenido: document.getElementById('nota-contenido').value.trim(),
+    fijada: document.getElementById('nota-fijada').checked ? 1 : 0
+  };
+
+  if (!payload.titulo) {
+    showToast("Por favor ingresa un título para la nota.", "error");
+    return;
+  }
+
+  try {
+    const url = notaId ? `/api/notas/${notaId}` : '/api/notas';
+    const method = notaId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    if (result.status === 'success') {
+      showToast(result.message || (notaId ? "Nota actualizada" : "Nota creada"), "success");
+      closeNotaModal();
+      loadNotas();
+      loadTemasNotas();
+    } else {
+      showToast(result.message || "Error al guardar nota", "error");
+    }
+  } catch (err) {
+    showToast("Error al conectar con el servidor", "error");
+  }
+}
+
+async function saveNotaFromMain() {
+  const payload = {
+    titulo: document.getElementById('nota-titulo-main').value.trim(),
+    tema_principal: document.getElementById('nota-tema-main').value.trim() || 'General',
+    subtema: document.getElementById('nota-subtema-main').value.trim(),
+    fecha: document.getElementById('nota-fecha-main').value || new Date().toISOString().split('T')[0],
+    color: document.getElementById('nota-color-main').value,
+    contenido: document.getElementById('nota-contenido-main').value.trim(),
+    fijada: document.getElementById('nota-fijada-main').checked ? 1 : 0
+  };
+
+  if (!payload.titulo) {
+    showToast("Por favor ingresa un título para la nota.", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/notas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    if (result.status === 'success') {
+      showToast("¡Nota guardada en tus apuntes!", "success");
+      document.getElementById('nota-titulo-main').value = '';
+      document.getElementById('nota-subtema-main').value = '';
+      document.getElementById('nota-contenido-main').value = '';
+      document.getElementById('nota-fijada-main').checked = false;
+      loadNotas();
+      loadTemasNotas();
+    } else {
+      showToast(result.message || "Error al guardar nota", "error");
+    }
+  } catch (err) {
+    showToast("Error al conectar para guardar nota", "error");
+  }
+}
+
+async function deleteNota(notaId) {
+  if (!confirm("¿Estás seguro de eliminar esta nota?")) return;
+
+  try {
+    const res = await fetch(`/api/notas/${notaId}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (result.status === 'success') {
+      showToast("Nota eliminada correctamente", "success");
+      loadNotas();
+      loadTemasNotas();
+    } else {
+      showToast(result.message || "Error al eliminar nota", "error");
+    }
+  } catch (err) {
+    showToast("Error al conectar con el servidor", "error");
+  }
+}
+
+async function togglePinNota(notaId) {
+  try {
+    const res = await fetch(`/api/notas/${notaId}/fijar`, { method: 'PATCH' });
+    const result = await res.json();
+    if (result.status === 'success') {
+      showToast(result.message || "Estado de fijado actualizado", "info");
+      loadNotas();
+    }
+  } catch (err) {
+    showToast("Error al cambiar estado de fijado", "error");
+  }
+}
+
+async function loadTemasNotas() {
+  try {
+    const res = await fetch('/api/notas/temas');
+    const result = await res.json();
+    if (result.status === 'success' && Array.isArray(result.data)) {
+      const temas = result.data;
+
+      // Actualizar datalist para autocompletado
+      const dl = document.getElementById('temas_list_web');
+      if (dl) {
+        dl.innerHTML = temas.map(t => `<option value="${escapeHtml(t)}"></option>`).join('');
+      }
+
+      // Actualizar select de filtro en la vista de notas
+      const sel = document.getElementById('filter-tema-notas');
+      if (sel) {
+        const valActual = sel.value;
+        let html = '<option value="Todos">Todos los Temas</option>';
+        temas.forEach(t => {
+          html += `<option value="${escapeHtml(t)}"${valActual === t ? ' selected' : ''}>${escapeHtml(t)}</option>`;
+        });
+        sel.innerHTML = html;
+      }
+    }
+  } catch (err) {
+    console.error("Error cargando temas de notas:", err);
   }
 }
 

@@ -227,6 +227,85 @@ def convertir_tarea_a_registro(tarea_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
+# ==========================================
+# ENDPOINTS API NOTAS Y APUNTES
+# ==========================================
+
+@app.route('/api/notas', methods=['GET'])
+def get_notas():
+    search = request.args.get('search')
+    tema = request.args.get('tema')
+    notas = db.get_all_notas(search, tema)
+    return jsonify({"status": "success", "data": notas})
+
+@app.route('/api/notas', methods=['POST'])
+def add_nota():
+    data = request.json or {}
+    try:
+        titulo = data.get('titulo', '').strip()
+        if not titulo:
+            return jsonify({"status": "error", "message": "El título de la nota es obligatorio."}), 400
+            
+        tema_principal = data.get('tema_principal', 'General').strip() or 'General'
+        subtema = data.get('subtema', '').strip()
+        contenido = data.get('contenido', '').strip()
+        fecha = data.get('fecha', datetime.now().strftime('%Y-%m-%d'))
+        color = data.get('color', '#3b82f6').strip() or '#3b82f6'
+        fijada = 1 if data.get('fijada') else 0
+        
+        nueva = db.add_nota(titulo, tema_principal, subtema, contenido, fecha, color, fijada)
+        return jsonify({"status": "success", "data": nueva, "message": "Nota guardada exitosamente."}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route('/api/notas/<int:nota_id>', methods=['PUT'])
+def update_nota(nota_id):
+    data = request.json or {}
+    try:
+        titulo = data.get('titulo', '').strip()
+        if not titulo:
+            return jsonify({"status": "error", "message": "El título de la nota es obligatorio."}), 400
+            
+        tema_principal = data.get('tema_principal', 'General').strip() or 'General'
+        subtema = data.get('subtema', '').strip()
+        contenido = data.get('contenido', '').strip()
+        fecha = data.get('fecha', datetime.now().strftime('%Y-%m-%d'))
+        color = data.get('color', '#3b82f6').strip() or '#3b82f6'
+        fijada = 1 if data.get('fijada') else 0
+        
+        actualizada = db.update_nota(nota_id, titulo, tema_principal, subtema, contenido, fecha, color, fijada)
+        if actualizada:
+            return jsonify({"status": "success", "data": actualizada, "message": "Nota actualizada correctamente."})
+        return jsonify({"status": "error", "message": "Nota no encontrada."}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route('/api/notas/<int:nota_id>', methods=['DELETE'])
+def delete_nota(nota_id):
+    try:
+        exito = db.delete_nota(nota_id)
+        if exito:
+            return jsonify({"status": "success", "message": "Nota eliminada."})
+        return jsonify({"status": "error", "message": "Nota no encontrada."}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route('/api/notas/<int:nota_id>/fijar', methods=['PATCH'])
+def toggle_fijar_nota(nota_id):
+    try:
+        actualizada = db.toggle_fijar_nota(nota_id)
+        if actualizada:
+            estado_txt = "destacada" if actualizada['fijada'] else "desfijada"
+            return jsonify({"status": "success", "data": actualizada, "message": f"Nota {estado_txt}."})
+        return jsonify({"status": "error", "message": "Nota no encontrada."}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route('/api/notas/temas', methods=['GET'])
+def get_temas_notas():
+    temas = db.get_temas_notas()
+    return jsonify({"status": "success", "data": temas})
+
 @app.route('/api/registros', methods=['GET'])
 def get_registros():
     fecha_inicio = request.args.get('fecha_inicio')
