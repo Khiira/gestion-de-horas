@@ -49,8 +49,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   initTimerState();
   initManualForm();
+  initNotaForm();
   loadSugerenciasExt();
   loadFeriadosExt();
+  loadTemasExt();
 
   const extHeader = document.getElementById("ext-quick-header");
   const extChips = document.getElementById("ext-chips");
@@ -82,6 +84,7 @@ async function checkConnection() {
       badge.textContent = "🟢 Conectado a tu PC";
       badge.className = "badge connected";
       loadSugerenciasExt();
+      loadTemasExt();
     } else {
       throw new Error("No Ok");
     }
@@ -95,22 +98,21 @@ async function checkConnection() {
 function initTabs() {
   const btnCrono = document.getElementById("tabCronometro");
   const btnManual = document.getElementById("tabManual");
+  const btnNota = document.getElementById("tabNota");
   const viewCrono = document.getElementById("viewCronometro");
   const viewManual = document.getElementById("viewManual");
+  const viewNota = document.getElementById("viewNota");
 
-  btnCrono.addEventListener("click", () => {
-    btnCrono.classList.add("active");
-    btnManual.classList.remove("active");
-    viewCrono.classList.add("active");
-    viewManual.classList.remove("active");
-  });
+  const activateTab = (activeBtn, activeView) => {
+    [btnCrono, btnManual, btnNota].forEach(b => { if (b) b.classList.remove("active"); });
+    [viewCrono, viewManual, viewNota].forEach(v => { if (v) v.classList.remove("active"); });
+    if (activeBtn) activeBtn.classList.add("active");
+    if (activeView) activeView.classList.add("active");
+  };
 
-  btnManual.addEventListener("click", () => {
-    btnManual.classList.add("active");
-    btnCrono.classList.remove("active");
-    viewManual.classList.add("active");
-    viewCrono.classList.remove("active");
-  });
+  if (btnCrono) btnCrono.addEventListener("click", () => activateTab(btnCrono, viewCrono));
+  if (btnManual) btnManual.addEventListener("click", () => activateTab(btnManual, viewManual));
+  if (btnNota) btnNota.addEventListener("click", () => activateTab(btnNota, viewNota));
 }
 
 // 3. Lógica del Cronómetro Persistente (sobrevive cerrar el popup o navegador)
@@ -393,4 +395,95 @@ function showToast(msg, type) {
   toast.className = `toast ${type}`;
   toast.style.display = "block";
   setTimeout(() => { toast.style.display = "none"; }, 4000);
+}
+
+// 6. Gestión de Notas y Apuntes desde la Extensión
+let extTemasData = { temas: [], subtemas_por_tema: {}, todos_subtemas: [] };
+
+async function loadTemasExt() {
+  try {
+    const res = await fetch(`${API_URL}/notas/temas`);
+    if (!res.ok) return;
+    const result = await res.json();
+    if (result.status === "success" && result.data) {
+      if (Array.isArray(result.data)) {
+        extTemasData = { temas: result.data, subtemas_por_tema: {}, todos_subtemas: [] };
+      } else {
+        extTemasData = {
+          temas: result.data.temas || [],
+          subtemas_por_tema: result.data.subtemas_por_tema || {},
+          todos_subtemas: result.data.todos_subtemas || []
+        };
+      }
+      const dlTemas = document.getElementById("temas_list_ext");
+      if (dlTemas) {
+        dlTemas.innerHTML = extTemasData.temas.map(t => `<option value="${t}"></option>`).join("");
+      }
+      updateSubtemasExtDatalist();
+    }
+  } catch (e) {
+    console.error("Error al cargar temas en extensión:", e);
+  }
+}
+
+function updateSubtemasExtDatalist(temaSeleccionado) {
+  const dl = document.getElementById("subtemas_list_ext");
+  if (!dl) return;
+  let subtemas = [];
+  const temaTrim = (temaSeleccionado || "").trim();
+  if (temaTrim && extTemasData.subtemas_por_tema[temaTrim]) {
+    subtemas = extTemasData.subtemas_por_tema[temaTrim];
+  } else {
+    subtemas = extTemasData.todos_subtemas || [];
+  }
+  dl.innerHTML = subtemas.map(s => `<option value="${s}"></option>`).join("");
+}
+
+function initNotaForm() {
+  const inputTema = document.getElementById("n_tema");
+  if (inputTema) {
+    inputTema.addEventListener("input", () => updateSubtemasExtDatalist(inputTema.value));
+    inputTema.addEventListener("change", () => updateSubtemasExtDatalist(inputTema.value));
+  }
+
+  const btnSaveNota = document.getElementById("btnSaveNota");
+  if (btnSaveNota) {
+    btnSaveNota.addEventListener("click", async () => {
+      const titulo = document.getElementById("n_titulo").value.trim();
+      const tema = document.getElementById("n_tema").value.trim() || "General";
+      const subtema = document.getElementById("n_subtema").value.trim();
+      const contenido = document.getElementById("n_contenido").value.trim();
+
+      if (!titulo) {
+        showToast("Ingresa un título para la nota", "disconnected");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/notas`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            titulo: titulo,
+            tema_principal: tema,
+            subtema: subtema,
+            contenido: contenido,
+            fecha: new Date().toISOString().split("T")[0]
+          })
+        });
+        const result = await res.json();
+        if (result.status === "success") {
+          showToast("¡Nota guardada en el sistema!", "connected");
+          document.getElementById("n_titulo").value = "";
+          document.getElementById("n_subtema").value = "";
+          document.getElementById("n_contenido").value = "";
+          loadTemasExt();
+        } else {
+          showToast(result.message || "Error al guardar", "disconnected");
+        }
+      } catch (e) {
+        showToast("Error de conexión con la app local", "disconnected");
+      }
+    });
+  }
 }

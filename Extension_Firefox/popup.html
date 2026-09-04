@@ -21,7 +21,8 @@
     <!-- Pestañas de Modo -->
     <div class="tabs">
       <button id="tabCronometro" class="tab active">⏱️ Cronómetro</button>
-      <button id="tabManual" class="tab">✍️ Ingreso Manual</button>
+      <button id="tabManual" class="tab">✍️ Manual</button>
+      <button id="tabNota" class="tab">📝 Notas</button>
     </div>
 
     <!-- MODO CRONÓMETRO -->
@@ -111,10 +112,38 @@
       <button id="btnSaveManual" class="btn btn-start" style="width: 100%; margin-top: 8px;">💾 Guardar Registro</button>
     </div>
 
+    <!-- MODO NOTAS & APUNTES -->
+    <div id="viewNota" class="view">
+      <div class="form-group">
+        <label>Título del Apunte / Nota</label>
+        <input type="text" id="n_titulo" placeholder="Ej: Revisar bitácora, temas clave..." autocomplete="off">
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <div class="form-group" style="flex: 1;">
+          <label>Tema / Libro</label>
+          <input type="text" id="n_tema" list="temas_list_ext" placeholder="Ej: Configuración" autocomplete="off">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Subtema / Cap.</label>
+          <input type="text" id="n_subtema" list="subtemas_list_ext" placeholder="Ej: Ajustes" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Contenido y Apuntes</label>
+        <textarea id="n_contenido" rows="3" style="width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 8px; color: #f8fafc; font-family: inherit; font-size: 12px; resize: vertical;" placeholder="Escribe aquí los apuntes que necesitas tener presente..."></textarea>
+      </div>
+
+      <button id="btnSaveNota" class="btn btn-start" style="width: 100%; margin-top: 4px; background: #0284c7;">💾 Guardar en mis Notas</button>
+    </div>
+
     <!-- Sugerencias para autocompletado inteligente -->
     <datalist id="lugar_list"></datalist>
     <datalist id="actividad_list"></datalist>
     <datalist id="comentario_list"></datalist>
+    <datalist id="temas_list_ext"></datalist>
+    <datalist id="subtemas_list_ext"></datalist>
 
     <!-- Mensaje Toast -->
     <div id="toast" class="toast"></div>
