@@ -177,9 +177,10 @@ def generate_all_icons():
         resized = master.resize(s, Image.Resampling.LANCZOS)
         ico_images.append(resized)
         
-    # Guardar icono.ico principal en la raíz
+    # Guardar icono.ico e icono_pro.ico en la raíz
     ico_images[0].save('icono.ico', format='ICO', sizes=ico_sizes, append_images=ico_images[1:])
-    print("[OK] icono.ico generado en la raiz")
+    ico_images[0].save('icono_pro.ico', format='ICO', sizes=ico_sizes, append_images=ico_images[1:])
+    print("[OK] icono.ico e icono_pro.ico generados en la raiz")
     
     # Crear carpeta static si no existe
     static_dir = os.path.join(os.path.dirname(__file__), 'static')

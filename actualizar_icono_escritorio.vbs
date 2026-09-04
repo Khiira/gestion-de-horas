@@ -7,7 +7,7 @@ strShortcutPath = objFSO.BuildPath(strDesktop, "Gestion de Horas Pro.lnk")
 ' Apuntar siempre al sistema principal en la raíz para conservar la base de datos original y toda la historia de registros
 strTarget = objFSO.GetAbsolutePathName("Iniciar_Silencioso.vbs")
 strWorkingDir = objFSO.GetAbsolutePathName(".")
-strIcon = objFSO.GetAbsolutePathName("icono.ico") & ", 0"
+strIcon = objFSO.GetAbsolutePathName("icono_pro.ico") & ", 0"
 
 Set oShellLink = WshShell.CreateShortcut(strShortcutPath)
 oShellLink.TargetPath = strTarget
