@@ -17,3 +17,6 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 WshShell.CurrentDirectory = objFSO.GetParentFolderName(WScript.ScriptFullName)
 ' Ejecutar en segundo plano con pythonw para no mostrar consola (0 = oculto, False = no esperar)
 WshShell.Run "pythonw.exe app.py", 0, False
+
+WScript.Sleep 1200
+WshShell.Run "http://127.0.0.1:5000"

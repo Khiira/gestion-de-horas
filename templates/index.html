@@ -256,13 +256,16 @@
               </div>
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <div class="form-group" style="flex: 1; min-width: 130px;">
-                  <label class="form-label" for="nota-tema-main"><i class="fa-solid fa-tag" style="color: #a855f7;"></i> Tema Principal</label>
-                  <input type="text" id="nota-tema-main" class="form-control" list="temas_list_web" placeholder="Ej: Trabajo, Ideas..." autocomplete="off">
+                  <label class="form-label" for="nota-tema-main"><i class="fa-solid fa-book" style="color: #a855f7;"></i> Tema / Libro Principal</label>
+                  <input type="text" id="nota-tema-main" class="form-control" list="temas_list_web" placeholder="Ej: Configuración, Trabajo..." autocomplete="off">
                 </div>
                 <div class="form-group" style="flex: 1; min-width: 130px;">
-                  <label class="form-label" for="nota-subtema-main"><i class="fa-solid fa-tags" style="color: #60a5fa;"></i> Subtema (Opcional)</label>
-                  <input type="text" id="nota-subtema-main" class="form-control" placeholder="Ej: Módulo A, Urgente..." autocomplete="off">
+                  <label class="form-label" for="nota-subtema-main"><i class="fa-solid fa-bookmark" style="color: #60a5fa;"></i> Subtema / Capítulo</label>
+                  <input type="text" id="nota-subtema-main" class="form-control" list="subtemas_list_web" placeholder="Ej: Ajustes, Lanzamiento..." autocomplete="off">
                 </div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-secondary); margin-top: -4px; margin-bottom: 10px;">
+                <i class="fa-solid fa-book-open" style="color: #38bdf8;"></i> Tipo libro: El <strong>Tema</strong> agrupa el libro y los <strong>Subtemas</strong> son sus capítulos.
               </div>
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <div class="form-group" style="flex: 1; min-width: 130px;">
@@ -547,26 +550,39 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
               <div>
                 <h3 style="margin: 0; font-size: 16px; color: #f8fafc;"><i class="fa-solid fa-book-bookmark" style="color: #38bdf8;"></i> Notas & Apuntes de Trabajo</h3>
-                <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">Guarda apuntes, temas pendientes, ideas y recordatorios importantes con clasificación por temas.</p>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">Organiza tus apuntes tipo libro por <strong>Tema Principal</strong> y <strong>Subtemas / Capítulos</strong>.</p>
               </div>
-              <button type="button" class="btn btn-primary" id="btn-nueva-nota" onclick="openNotaModal()" style="background: #0284c7; border-color: #0284c7;">
-                <i class="fa-solid fa-plus"></i> + Nueva Nota
-              </button>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div class="notas-view-toggle">
+                  <button type="button" id="btn-mode-libro" class="btn-notas-toggle active" onclick="setNotasViewMode('libro')" title="Vista Tipo Libro / Jerárquica">
+                    <i class="fa-solid fa-book-open"></i> Vista Libro
+                  </button>
+                  <button type="button" id="btn-mode-grid" class="btn-notas-toggle" onclick="setNotasViewMode('grid')" title="Vista Cuadrícula de Tarjetas">
+                    <i class="fa-solid fa-table-cells-large"></i> Cuadrícula
+                  </button>
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-nueva-nota" onclick="openNotaModal()" style="background: #0284c7; border-color: #0284c7;">
+                  <i class="fa-solid fa-plus"></i> + Nueva Nota
+                </button>
+              </div>
             </div>
 
             <!-- Filtros y Búsqueda de Notas -->
-            <div class="notas-filter-bar" style="display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;">
-              <input type="text" id="filter-search-notas" class="form-control" placeholder="🔍 Buscar notas por título, tema o contenido..." style="flex: 2; min-width: 220px;" oninput="debounceFilterNotas()">
-              <select id="filter-tema-notas" class="form-control" style="flex: 1; min-width: 170px;" onchange="loadNotas()">
-                <option value="Todos">Todos los Temas</option>
+            <div class="notas-filter-bar" style="display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;">
+              <input type="text" id="filter-search-notas" class="form-control" placeholder="🔍 Buscar notas por título, libro, capítulo o contenido..." style="flex: 2; min-width: 220px;" oninput="debounceFilterNotas()">
+              <select id="filter-tema-notas" class="form-control" style="flex: 1.2; min-width: 170px;" onchange="onTemaFilterChange()">
+                <option value="Todos">📘 Todos los Libros / Temas</option>
               </select>
-              <div id="notas-count-badge" class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 13px; padding: 8px 12px;">
+              <select id="filter-subtema-notas" class="form-control" style="flex: 1.2; min-width: 170px;" onchange="loadNotas()">
+                <option value="Todos">📑 Todos los Subtemas</option>
+              </select>
+              <div id="notas-count-badge" class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 13px; padding: 8px 12px; white-space: nowrap;">
                 0 notas
               </div>
             </div>
 
-            <!-- Contenedor de Tarjetas de Notas -->
-            <div id="notas-cards-container" class="notas-grid">
+            <!-- Contenedor Dinámico de Notas (Vista Libro o Cuadrícula) -->
+            <div id="notas-cards-container">
               <!-- Se llena dinámicamente con JS -->
             </div>
           </div>
@@ -884,13 +900,16 @@
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <div class="form-group" style="flex: 1; min-width: 150px;">
-            <label class="form-label" for="nota-tema"><i class="fa-solid fa-tag" style="color: #a855f7;"></i> Tema Principal</label>
-            <input type="text" id="nota-tema" class="form-control" list="temas_list_web" placeholder="Ej: Trabajo, Proyecto..." autocomplete="off">
+            <label class="form-label" for="nota-tema"><i class="fa-solid fa-book" style="color: #a855f7;"></i> Tema / Libro Principal</label>
+            <input type="text" id="nota-tema" class="form-control" list="temas_list_web" placeholder="Ej: Configuración, Trabajo..." autocomplete="off">
           </div>
           <div class="form-group" style="flex: 1; min-width: 150px;">
-            <label class="form-label" for="nota-subtema"><i class="fa-solid fa-tags" style="color: #60a5fa;"></i> Subtema / Subtítulo</label>
-            <input type="text" id="nota-subtema" class="form-control" placeholder="Ej: Fase 2, Urgente..." autocomplete="off">
+            <label class="form-label" for="nota-subtema"><i class="fa-solid fa-bookmark" style="color: #60a5fa;"></i> Subtema / Capítulo</label>
+            <input type="text" id="nota-subtema" class="form-control" list="subtemas_list_web" placeholder="Ej: Ajustes, Lanzamiento..." autocomplete="off">
           </div>
+        </div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: -4px; margin-bottom: 12px;">
+          <i class="fa-solid fa-book-open" style="color: #38bdf8;"></i> Tipo libro: Elige un tema existente o escribe uno nuevo para agruparlo como libro y definir sus capítulos.
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <div class="form-group" style="flex: 1; min-width: 150px;">
@@ -935,6 +954,7 @@
   <datalist id="lugar_list_web"></datalist>
   <datalist id="actividad_list_web"></datalist>
   <datalist id="temas_list_web"></datalist>
+  <datalist id="subtemas_list_web"></datalist>
 
   <script src="{{ url_for('static', filename='js/app.js') }}?v={{ cache_v }}"></script>
 </body>

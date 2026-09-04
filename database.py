@@ -590,7 +590,7 @@ def get_nota(nota_id):
     conn.close()
     return dict(row) if row else None
 
-def get_all_notas(search=None, tema=None):
+def get_all_notas(search=None, tema=None, subtema=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     query = 'SELECT * FROM notas WHERE 1=1'
@@ -599,6 +599,10 @@ def get_all_notas(search=None, tema=None):
     if tema and tema != 'Todos':
         query += ' AND tema_principal = ?'
         params.append(tema)
+
+    if subtema and subtema != 'Todos':
+        query += ' AND subtema = ?'
+        params.append(subtema)
 
     if search:
         query += ' AND (titulo LIKE ? OR tema_principal LIKE ? OR subtema LIKE ? OR contenido LIKE ?)'
@@ -652,15 +656,35 @@ def get_temas_notas():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT DISTINCT tema_principal 
+        SELECT DISTINCT tema_principal, subtema 
         FROM notas 
         WHERE tema_principal IS NOT NULL AND tema_principal != '' 
-        ORDER BY tema_principal ASC
+        ORDER BY tema_principal ASC, subtema ASC
     ''')
     rows = cursor.fetchall()
     conn.close()
-    temas = [row['tema_principal'] for row in rows]
-    return temas
+
+    temas = []
+    subtemas_por_tema = {}
+    todos_subtemas = set()
+
+    for r in rows:
+        t = (r['tema_principal'] or '').strip()
+        s = (r['subtema'] or '').strip()
+        if t:
+            if t not in subtemas_por_tema:
+                subtemas_por_tema[t] = []
+                temas.append(t)
+            if s and s not in subtemas_por_tema[t]:
+                subtemas_por_tema[t].append(s)
+            if s:
+                todos_subtemas.add(s)
+
+    return {
+        "temas": temas,
+        "subtemas_por_tema": subtemas_por_tema,
+        "todos_subtemas": sorted(list(todos_subtemas))
+    }
 
 
 

@@ -2077,27 +2077,169 @@ function switchConfigModalTab(tabName) {
 }
 
 /* ==========================================
-   MÓDULO: GESTIÓN DE NOTAS Y APUNTES
+/* ==========================================
+   MÓDULO: GESTIÓN DE NOTAS Y APUNTES (TIPO LIBRO)
    ========================================== */
 let currentNotas = [];
 let currentEditNotaId = null;
 let debounceNotasTimer = null;
+let currentNotasViewMode = localStorage.getItem('notas_view_mode') || 'libro';
+let estructuraNotas = { temas: [], subtemas_por_tema: {}, todos_subtemas: [] };
+let collapsedBooks = new Set();
 
 function initNotasView() {
+  setNotasViewMode(currentNotasViewMode, false);
+  setupTemaSubtemaListeners();
+  loadTemasNotas().then(() => {
+    loadNotas();
+  });
+}
+
+function setNotasViewMode(mode, shouldRender = true) {
+  currentNotasViewMode = mode;
+  try {
+    localStorage.setItem('notas_view_mode', mode);
+  } catch(e) {}
+
+  const btnLibro = document.getElementById('btn-mode-libro');
+  const btnGrid = document.getElementById('btn-mode-grid');
+  if (btnLibro && btnGrid) {
+    if (mode === 'libro') {
+      btnLibro.classList.add('active');
+      btnGrid.classList.remove('active');
+    } else {
+      btnGrid.classList.add('active');
+      btnLibro.classList.remove('active');
+    }
+  }
+
+  if (shouldRender && currentNotas) {
+    renderNotas(currentNotas);
+  }
+}
+
+function setupTemaSubtemaListeners() {
+  const temaMain = document.getElementById('nota-tema-main');
+  if (temaMain) {
+    const updateMainSubtemas = () => {
+      updateSubtemasDatalist(temaMain.value);
+    };
+    temaMain.addEventListener('input', updateMainSubtemas);
+    temaMain.addEventListener('change', updateMainSubtemas);
+  }
+
+  const temaModal = document.getElementById('nota-tema');
+  if (temaModal) {
+    const updateModalSubtemas = () => {
+      updateSubtemasDatalist(temaModal.value);
+    };
+    temaModal.addEventListener('input', updateModalSubtemas);
+    temaModal.addEventListener('change', updateModalSubtemas);
+  }
+}
+
+function updateSubtemasDatalist(temaSeleccionado) {
+  const dl = document.getElementById('subtemas_list_web');
+  if (!dl) return;
+
+  let subtemas = [];
+  const temaTrim = (temaSeleccionado || '').trim();
+  if (temaTrim && estructuraNotas.subtemas_por_tema[temaTrim]) {
+    subtemas = estructuraNotas.subtemas_por_tema[temaTrim];
+  } else {
+    subtemas = estructuraNotas.todos_subtemas || [];
+  }
+
+  dl.innerHTML = subtemas.map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
+}
+
+async function loadTemasNotas() {
+  try {
+    const res = await fetch('/api/notas/temas');
+    const result = await res.json();
+    if (result.status === 'success' && result.data) {
+      if (Array.isArray(result.data)) {
+        estructuraNotas = {
+          temas: result.data,
+          subtemas_por_tema: {},
+          todos_subtemas: []
+        };
+      } else {
+        estructuraNotas = {
+          temas: result.data.temas || [],
+          subtemas_por_tema: result.data.subtemas_por_tema || {},
+          todos_subtemas: result.data.todos_subtemas || []
+        };
+      }
+
+      // 1. Datalist para autocompletar Temas Principales
+      const dlTemas = document.getElementById('temas_list_web');
+      if (dlTemas) {
+        dlTemas.innerHTML = estructuraNotas.temas.map(t => `<option value="${escapeHtml(t)}"></option>`).join('');
+      }
+
+      // 2. Datalist para autocompletar Subtemas
+      updateSubtemasDatalist();
+
+      // 3. Select de filtro por Tema
+      const selTema = document.getElementById('filter-tema-notas');
+      if (selTema) {
+        const valActual = selTema.value;
+        let html = '<option value="Todos">📘 Todos los Libros / Temas</option>';
+        estructuraNotas.temas.forEach(t => {
+          html += `<option value="${escapeHtml(t)}"${valActual === t ? ' selected' : ''}>📘 ${escapeHtml(t)}</option>`;
+        });
+        selTema.innerHTML = html;
+      }
+
+      // 4. Actualizar select de subtemas del filtro
+      updateFilterSubtemaOptions();
+    }
+  } catch (err) {
+    console.error("Error cargando temas de notas:", err);
+  }
+}
+
+function onTemaFilterChange() {
+  updateFilterSubtemaOptions();
   loadNotas();
-  loadTemasNotas();
+}
+
+function updateFilterSubtemaOptions() {
+  const selTema = document.getElementById('filter-tema-notas');
+  const selSubtema = document.getElementById('filter-subtema-notas');
+  if (!selSubtema) return;
+
+  const temaElegido = selTema ? selTema.value : 'Todos';
+  let opciones = [];
+
+  if (temaElegido !== 'Todos' && estructuraNotas.subtemas_por_tema[temaElegido]) {
+    opciones = estructuraNotas.subtemas_por_tema[temaElegido];
+  } else {
+    opciones = estructuraNotas.todos_subtemas || [];
+  }
+
+  const valActual = selSubtema.value;
+  let html = '<option value="Todos">📑 Todos los Subtemas</option>';
+  opciones.forEach(s => {
+    html += `<option value="${escapeHtml(s)}"${valActual === s ? ' selected' : ''}>📑 ${escapeHtml(s)}</option>`;
+  });
+  selSubtema.innerHTML = html;
 }
 
 async function loadNotas() {
   const searchInput = document.getElementById('filter-search-notas');
   const temaSelect = document.getElementById('filter-tema-notas');
+  const subtemaSelect = document.getElementById('filter-subtema-notas');
 
   const search = searchInput ? searchInput.value.trim() : '';
   const tema = temaSelect ? temaSelect.value : '';
+  const subtema = subtemaSelect ? subtemaSelect.value : '';
 
   const params = new URLSearchParams();
   if (search) params.append('search', search);
   if (tema && tema !== 'Todos') params.append('tema', tema);
+  if (subtema && subtema !== 'Todos') params.append('subtema', subtema);
 
   try {
     const res = await fetch(`/api/notas?${params.toString()}`);
@@ -2107,7 +2249,7 @@ async function loadNotas() {
       renderNotas(currentNotas);
       const countBadge = document.getElementById('notas-count-badge');
       if (countBadge) {
-        countBadge.textContent = `${currentNotas.length} nota${currentNotas.length !== 1 ? 's' : ''}`;
+        countBadge.textContent = `${currentNotas.length} apunte${currentNotas.length !== 1 ? 's' : ''}`;
       }
     }
   } catch (err) {
@@ -2127,66 +2269,193 @@ function renderNotas(notas) {
   if (!container) return;
 
   if (!notas || notas.length === 0) {
+    container.className = '';
     container.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: rgba(30, 41, 59, 0.4); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1);">
-        <i class="fa-solid fa-note-sticky" style="font-size: 40px; color: #38bdf8; opacity: 0.6; margin-bottom: 12px; display: inline-block;"></i>
+      <div style="text-align: center; padding: 48px 20px; background: rgba(30, 41, 59, 0.4); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1); margin-top: 10px;">
+        <i class="fa-solid fa-book-open" style="font-size: 42px; color: #38bdf8; opacity: 0.6; margin-bottom: 12px; display: inline-block;"></i>
         <h4 style="font-size: 16px; color: #f8fafc; margin-bottom: 6px;">No tienes notas o apuntes registrados</h4>
-        <p style="font-size: 13px; color: var(--text-secondary); max-width: 420px; margin: 0 auto 16px;">
-          Toma apuntes de temas pendientes, recordatorios clave o notas importantes con subtareas a tener presentes.
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 460px; margin: 0 auto 16px; line-height: 1.5;">
+          Organiza tus apuntes tipo libro: elige un <strong>Tema Principal</strong> (ej: Configuración) y sus <strong>Subtemas / Capítulos</strong> (ej: Ajustes, Lanzamiento) para asociar tu conocimiento.
         </p>
         <button type="button" class="btn btn-primary" onclick="openNotaModal()" style="background: #0284c7; border-color: #0284c7; display: inline-flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-plus"></i> Crear Primera Nota
+          <i class="fa-solid fa-plus"></i> Crear Primer Apunte
         </button>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = notas.map(n => {
-    const color = n.color || '#3b82f6';
-    const isPinned = !!n.fijada;
-    const tema = n.tema_principal || 'General';
-    const subtema = n.subtema ? `<span class="nota-subtema-badge"><i class="fa-solid fa-tags" style="font-size: 10px; margin-right: 3px;"></i>${escapeHtml(n.subtema)}</span>` : '';
-    const fecha = n.fecha ? n.fecha.split('-').reverse().join('/') : '';
-    
-    return `
-      <div class="nota-card ${isPinned ? 'fijada' : ''}" style="--nota-color: ${color};">
-        <div>
-          <div class="nota-header-top">
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-              <span class="nota-tag-badge">
-                <i class="fa-solid fa-tag" style="font-size: 10px;"></i>
-                ${escapeHtml(tema)}
-              </span>
-              ${subtema}
+  if (currentNotasViewMode === 'libro') {
+    renderNotasLibro(notas, container);
+  } else {
+    renderNotasGrid(notas, container);
+  }
+}
+
+// 📖 RENDERIZADO TIPO LIBRO / JERÁRQUICO
+function renderNotasLibro(notas, container) {
+  container.className = 'notas-book-view-container';
+
+  // Agrupar por Tema Principal (Libro)
+  const gruposTema = {};
+  notas.forEach(n => {
+    const tema = (n.tema_principal || 'General').trim();
+    if (!gruposTema[tema]) {
+      gruposTema[tema] = [];
+    }
+    gruposTema[tema].push(n);
+  });
+
+  const temasKeys = Object.keys(gruposTema).sort((a, b) => a.localeCompare(b));
+
+  let html = '';
+  temasKeys.forEach(tema => {
+    const notasDelTema = gruposTema[tema];
+    const temaSafeId = 'book-' + encodeURIComponent(tema).replace(/[^a-zA-Z0-9]/g, '_');
+    const isCollapsed = collapsedBooks.has(tema);
+
+    // Agrupar dentro del libro por Subtema (Capítulo)
+    const gruposSubtema = {};
+    notasDelTema.forEach(n => {
+      const sub = (n.subtema || '').trim();
+      const capKey = sub || '__sin_subtema__';
+      if (!gruposSubtema[capKey]) {
+        gruposSubtema[capKey] = [];
+      }
+      gruposSubtema[capKey].push(n);
+    });
+
+    const subtemasKeys = Object.keys(gruposSubtema).sort((a, b) => {
+      if (a === '__sin_subtema__') return 1;
+      if (b === '__sin_subtema__') return -1;
+      return a.localeCompare(b);
+    });
+
+    const cantCapitulos = subtemasKeys.filter(k => k !== '__sin_subtema__').length;
+
+    html += `
+      <div class="nota-book-section" id="${temaSafeId}">
+        <div class="nota-book-header" onclick="toggleBookCollapse('${escapeHtml(tema)}', '${temaSafeId}')">
+          <div class="nota-book-title-wrap">
+            <i class="fa-solid fa-book-bookmark nota-book-icon"></i>
+            <span class="nota-book-title">${escapeHtml(tema)}</span>
+            <div class="nota-book-stats">
+              <span class="nota-badge-count"><i class="fa-regular fa-note-sticky"></i> ${notasDelTema.length} nota${notasDelTema.length !== 1 ? 's' : ''}</span>
+              ${cantCapitulos > 0 ? `<span class="nota-badge-capitulos"><i class="fa-solid fa-bookmark"></i> ${cantCapitulos} capítulo${cantCapitulos !== 1 ? 's' : ''}</span>` : ''}
             </div>
-            <button type="button" class="nota-pin-btn ${isPinned ? 'pinned' : ''}" onclick="togglePinNota(${n.id})" title="${isPinned ? 'Desfijar de destacados' : 'Fijar como destacada al inicio'}">
-              <i class="fa-solid fa-thumbtack"></i>
+          </div>
+          <div class="nota-book-actions" onclick="event.stopPropagation()">
+            <button type="button" class="btn-book-add" onclick="openNotaModal(null, '${escapeHtml(tema)}')" title="Añadir nueva nota a este libro">
+              <i class="fa-solid fa-plus"></i> + Nota en este Libro
+            </button>
+            <button type="button" class="btn-book-collapse ${isCollapsed ? 'collapsed' : ''}" onclick="toggleBookCollapse('${escapeHtml(tema)}', '${temaSafeId}')" title="${isCollapsed ? 'Expandir' : 'Colapsar'}">
+              <i class="fa-solid fa-chevron-down"></i>
             </button>
           </div>
-          
-          <div class="nota-card-title">${escapeHtml(n.titulo)}</div>
-          
-          <div class="nota-card-content">${escapeHtml(n.contenido || 'Sin contenido adicional.')}</div>
         </div>
 
-        <div class="nota-card-footer">
-          <span><i class="fa-regular fa-calendar" style="margin-right: 4px;"></i>${fecha}</span>
-          <div class="nota-action-btns">
-            <button type="button" class="btn-icon-nota" onclick="editNota(${n.id})" title="Editar nota">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            <button type="button" class="btn-icon-nota delete" onclick="deleteNota(${n.id})" title="Eliminar nota">
-              <i class="fa-solid fa-trash"></i>
-            </button>
+        <div class="nota-book-body ${isCollapsed ? 'collapsed' : ''}" id="body-${temaSafeId}">
+    `;
+
+    subtemasKeys.forEach(capKey => {
+      const notasCap = gruposSubtema[capKey];
+      const esSinSubtema = (capKey === '__sin_subtema__');
+      const capTitulo = esSinSubtema ? 'General / Sin Subtema' : capKey;
+      const capIcon = esSinSubtema ? 'fa-regular fa-folder-open' : 'fa-solid fa-tags';
+
+      html += `
+        <div class="nota-chapter-block">
+          <div class="nota-chapter-header">
+            <div class="nota-chapter-title">
+              <i class="${capIcon}"></i>
+              <span>${escapeHtml(capTitulo)}</span>
+            </div>
+            <span class="nota-chapter-badge">${notasCap.length} apunte${notasCap.length !== 1 ? 's' : ''}</span>
           </div>
+          <div class="nota-chapter-cards">
+            ${notasCap.map(n => renderNotaCardHtml(n, false)).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
         </div>
       </div>
     `;
-  }).join('');
+  });
+
+  container.innerHTML = html;
 }
 
-function openNotaModal(notaId = null) {
+function toggleBookCollapse(tema, safeId) {
+  if (collapsedBooks.has(tema)) {
+    collapsedBooks.delete(tema);
+  } else {
+    collapsedBooks.add(tema);
+  }
+
+  const body = document.getElementById(`body-${safeId}`);
+  const btn = document.querySelector(`#${safeId} .btn-book-collapse`);
+  if (body) {
+    body.classList.toggle('collapsed');
+  }
+  if (btn) {
+    btn.classList.toggle('collapsed');
+  }
+}
+
+// ▦ RENDERIZADO CUADRÍCULA
+function renderNotasGrid(notas, container) {
+  container.className = 'notas-grid';
+  container.innerHTML = notas.map(n => renderNotaCardHtml(n, true)).join('');
+}
+
+function renderNotaCardHtml(n, showFullBreadcrumbs = true) {
+  const color = n.color || '#3b82f6';
+  const isPinned = !!n.fijada;
+  const tema = n.tema_principal || 'General';
+  const fecha = n.fecha ? n.fecha.split('-').reverse().join('/') : '';
+  const subtemaBadge = n.subtema ? `<span class="nota-subtema-badge"><i class="fa-solid fa-tags" style="font-size: 10px; margin-right: 3px;"></i>${escapeHtml(n.subtema)}</span>` : '';
+
+  return `
+    <div class="nota-card ${isPinned ? 'fijada' : ''}" style="--nota-color: ${color}; border-left: 3px solid ${color};">
+      <div>
+        <div class="nota-header-top">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            ${showFullBreadcrumbs ? `
+              <span class="nota-tag-badge">
+                <i class="fa-solid fa-book" style="font-size: 10px;"></i>
+                ${escapeHtml(tema)}
+              </span>
+              ${subtemaBadge}
+            ` : (n.subtema ? subtemaBadge : '')}
+          </div>
+          <button type="button" class="nota-pin-btn ${isPinned ? 'pinned' : ''}" onclick="togglePinNota(${n.id})" title="${isPinned ? 'Desfijar de destacados' : 'Fijar como destacada al inicio'}">
+            <i class="fa-solid fa-thumbtack"></i>
+          </button>
+        </div>
+        
+        <div class="nota-card-title">${escapeHtml(n.titulo)}</div>
+        <div class="nota-card-content">${escapeHtml(n.contenido || 'Sin contenido adicional.')}</div>
+      </div>
+
+      <div class="nota-card-footer">
+        <span><i class="fa-regular fa-calendar" style="margin-right: 4px;"></i>${fecha}</span>
+        <div class="nota-action-btns">
+          <button type="button" class="btn-icon-nota" onclick="editNota(${n.id})" title="Editar nota">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button type="button" class="btn-icon-nota delete" onclick="deleteNota(${n.id})" title="Eliminar nota">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openNotaModal(notaId = null, defaultTema = '', defaultSubtema = '') {
   currentEditNotaId = notaId;
   const modal = document.getElementById('modal-nota');
   const title = document.getElementById('modal-nota-title');
@@ -2206,14 +2475,18 @@ function openNotaModal(notaId = null) {
       document.getElementById('nota-color').value = n.color || '#3b82f6';
       document.getElementById('nota-contenido').value = n.contenido || '';
       document.getElementById('nota-fijada').checked = !!n.fijada;
+      updateSubtemasDatalist(n.tema_principal);
     }
   } else {
     if (title) title.innerHTML = '<i class="fa-solid fa-book-bookmark" style="color: #38bdf8;"></i> Nueva Nota / Apunte';
     if (form) form.reset();
     document.getElementById('nota-id').value = '';
+    document.getElementById('nota-tema').value = defaultTema || '';
+    document.getElementById('nota-subtema').value = defaultSubtema || '';
     document.getElementById('nota-fecha').value = new Date().toISOString().split('T')[0];
     document.getElementById('nota-color').value = '#3b82f6';
     document.getElementById('nota-fijada').checked = false;
+    updateSubtemasDatalist(defaultTema);
   }
 
   modal.classList.add('active');
@@ -2258,10 +2531,10 @@ async function saveNota() {
 
     const result = await res.json();
     if (result.status === 'success') {
-      showToast(result.message || (notaId ? "Nota actualizada" : "Nota creada"), "success");
+      showToast(result.message || (notaId ? "Nota actualizada" : "Nota creada en tus apuntes"), "success");
       closeNotaModal();
-      loadNotas();
-      loadTemasNotas();
+      await loadTemasNotas();
+      await loadNotas();
     } else {
       showToast(result.message || "Error al guardar nota", "error");
     }
@@ -2295,13 +2568,13 @@ async function saveNotaFromMain() {
 
     const result = await res.json();
     if (result.status === 'success') {
-      showToast("¡Nota guardada en tus apuntes!", "success");
+      showToast("¡Nota guardada en el libro!", "success");
       document.getElementById('nota-titulo-main').value = '';
       document.getElementById('nota-subtema-main').value = '';
       document.getElementById('nota-contenido-main').value = '';
       document.getElementById('nota-fijada-main').checked = false;
-      loadNotas();
-      loadTemasNotas();
+      await loadTemasNotas();
+      await loadNotas();
     } else {
       showToast(result.message || "Error al guardar nota", "error");
     }
@@ -2311,15 +2584,15 @@ async function saveNotaFromMain() {
 }
 
 async function deleteNota(notaId) {
-  if (!confirm("¿Estás seguro de eliminar esta nota?")) return;
+  if (!confirm("¿Estás seguro de eliminar este apunte?")) return;
 
   try {
     const res = await fetch(`/api/notas/${notaId}`, { method: 'DELETE' });
     const result = await res.json();
     if (result.status === 'success') {
-      showToast("Nota eliminada correctamente", "success");
-      loadNotas();
-      loadTemasNotas();
+      showToast("Apunte eliminado correctamente", "success");
+      await loadTemasNotas();
+      await loadNotas();
     } else {
       showToast(result.message || "Error al eliminar nota", "error");
     }
@@ -2338,35 +2611,6 @@ async function togglePinNota(notaId) {
     }
   } catch (err) {
     showToast("Error al cambiar estado de fijado", "error");
-  }
-}
-
-async function loadTemasNotas() {
-  try {
-    const res = await fetch('/api/notas/temas');
-    const result = await res.json();
-    if (result.status === 'success' && Array.isArray(result.data)) {
-      const temas = result.data;
-
-      // Actualizar datalist para autocompletado
-      const dl = document.getElementById('temas_list_web');
-      if (dl) {
-        dl.innerHTML = temas.map(t => `<option value="${escapeHtml(t)}"></option>`).join('');
-      }
-
-      // Actualizar select de filtro en la vista de notas
-      const sel = document.getElementById('filter-tema-notas');
-      if (sel) {
-        const valActual = sel.value;
-        let html = '<option value="Todos">Todos los Temas</option>';
-        temas.forEach(t => {
-          html += `<option value="${escapeHtml(t)}"${valActual === t ? ' selected' : ''}>${escapeHtml(t)}</option>`;
-        });
-        sel.innerHTML = html;
-      }
-    }
-  } catch (err) {
-    console.error("Error cargando temas de notas:", err);
   }
 }
 

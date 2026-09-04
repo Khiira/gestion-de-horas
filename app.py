@@ -235,7 +235,8 @@ def convertir_tarea_a_registro(tarea_id):
 def get_notas():
     search = request.args.get('search')
     tema = request.args.get('tema')
-    notas = db.get_all_notas(search, tema)
+    subtema = request.args.get('subtema')
+    notas = db.get_all_notas(search, tema, subtema)
     return jsonify({"status": "success", "data": notas})
 
 @app.route('/api/notas', methods=['POST'])
